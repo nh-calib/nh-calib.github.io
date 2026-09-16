@@ -1,37 +1,35 @@
 # NH-Calib project page
 
-Static, dependency-free project page for the anonymous NH-Calib ICRA 2027 submission.
+Static, dependency-free project page for the anonymous NH-Calib manuscript:
 
-## Anonymous publication target
+> **NH-Calib: Vehicle-Motion-Constrained Self-Calibration of Onboard Sensor Extrinsics**
 
-- Candidate account: `nh-calib-project` (available when checked on 15 September 2026).
-- Candidate URL: `https://nh-calib-project.github.io/`.
-- Create the GitHub account with a new neutral email address that is not associated with any author, lab, institution, ORCID, or existing GitHub account.
-- Do not fork from, transfer from, star with, or add as a collaborator any identity-bearing account during review.
-- Use only neutral commit metadata such as `Anonymous Researcher <anonymous@users.noreply.github.com>`.
-- Keep analytics, external fonts, author links, lab logos, and identity-bearing media metadata out of the review deployment.
+Published at <https://nh-calib.github.io/>.
+
+## Current content
+
+- Latest anonymous title, abstract, and vehicle-motion-constrained framing.
+- Two-stage method overview with the current user-authored Figs. 1--3.
+- Graph-integrated relative calibration results for A2D2, RadarScenes, and Ford Multi-AV Logs 4--6.
+- Anonymous resource placeholders for the paper, code, processed data, and documentation.
 
 ## Local preview
 
-From this directory, run a local HTTP server:
+From this directory, run:
 
 ```powershell
 & 'C:\Program Files\Python312\python.exe' -m http.server 8080
 ```
 
-Then open `http://localhost:8080/` on win_lab.
+Then open <http://localhost:8080/> on `win_lab`.
 
-## Review-period publication checklist
+## Publication policy
 
-- Keep `Anonymous`, `Under review`, and the frozen English paper title unchanged during review.
-- Keep paper, code, data, and video identity-bearing URLs disabled until the anonymity period ends.
-- Confirm every metric against the camera-ready manuscript.
-- Replace draft raster figures if final vector exports become available.
-- Add an Open Graph preview image only after verifying that its metadata is anonymous.
-- Test keyboard navigation, mobile layout, and external links.
+- Keep author names, affiliations, lab logos, and identity-bearing metadata out while anonymous review is required.
+- Release code and processed assets through this project site upon publication.
+- Confirm every reported metric against the canonical manuscript before deployment.
+- Keep the site dependency-free and free of analytics during anonymous review.
 
-## GitHub Pages deployment
+## Deployment
 
-Publish this folder as the root of the dedicated `nh-calib-project.github.io` repository owned by the anonymous `nh-calib-project` account. No build step is required.
-
-The review deployment is intentionally non-indexed and contains no analytics. Replace anonymous metadata and activate archival links only after acceptance.
+The repository remote is `https://github.com/nh-calib/nh-calib.github.io.git`. GitHub Pages serves the `main` branch from the repository root; no build step is required.
