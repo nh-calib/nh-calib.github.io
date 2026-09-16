@@ -5,244 +5,136 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="author" content="Anonymous">
-  <meta name="description" content="NH-Calib is a target-free, vehicle-motion-constrained method for relative extrinsic calibration of onboard sensors from ego-motion.">
-  <title>NH-Calib | Vehicle-Motion-Constrained Sensor Calibration</title>
+  <meta name="description" content="NH-Calib estimates relative extrinsic calibration from the motion of wheeled vehicles.">
+  <title>NH-Calib</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
-  <header class="site-header">
-    <a class="brand" href="#top" aria-label="NH-Calib home">
-      <span class="brand-mark" aria-hidden="true">NH</span>
-      <span>NH-Calib</span>
-    </a>
-    <nav aria-label="Main navigation">
-      <a href="#abstract">Abstract</a>
-      <a href="#overview">Overview</a>
+  <header class="topbar">
+    <a class="wordmark" href="#top">NH-Calib</a>
+    <nav aria-label="Page navigation">
       <a href="#method">Method</a>
       <a href="#results">Results</a>
-      <a href="#resources">Resources</a>
+      <a href="#citation">Citation</a>
     </nav>
   </header>
 
-  <main id="main">
-    <section class="hero" id="top">
-      <div class="hero-copy">
-        <p class="eyebrow">Anonymous research project</p>
-        <h1>Calibrate onboard sensors<br><span>from vehicle motion.</span></h1>
-        <p class="paper-title">NH-Calib: Vehicle-Motion-Constrained Self-Calibration of Onboard Sensor Extrinsics</p>
-        <p class="hero-summary">
-          NH-Calib estimates relative five-degree-of-freedom extrinsics from sensor ego-motion, without calibration
-          targets, direct cross-sensor registration, or ground-truth calibration during estimation.
-        </p>
-        <div class="cta-row" aria-label="Project resources">
-          <span class="button button-muted" aria-disabled="true">Paper &mdash; manuscript</span>
-          <span class="button button-muted" aria-disabled="true">Code &mdash; upon publication</span>
-          <a class="button button-primary" href="#method">Explore the method</a>
-        </div>
-        <p class="submission-note">Authors and affiliations are withheld while the manuscript remains anonymous.</p>
-      </div>
-      <div class="hero-visual figure-shell">
-        <img src="assets/fig01_nhc_4plus1plus1_v1.png" alt="Onboard sensors sharing vehicle motion while observing different parts of the scene" fetchpriority="high">
+  <main id="top">
+    <section class="paper-header">
+      <p class="venue">Research project &middot; manuscript in preparation</p>
+      <h1>NH-Calib: Vehicle-Motion-Constrained<br>Self-Calibration of Onboard Sensor Extrinsics</h1>
+      <p class="authors">Anonymous authors</p>
+      <p class="affiliation">Affiliations withheld during review</p>
+      <div class="links" aria-label="Project links">
+        <span>Paper <small>coming soon</small></span>
+        <span>Code <small>upon acceptance</small></span>
       </div>
     </section>
 
-    <section class="section section-narrow" id="abstract">
-      <p class="section-kicker">Abstract</p>
-      <h2>Motion-constrained calibration without targets or shared observations.</h2>
-      <p class="abstract-copy">
-        Extrinsic calibration is essential for fusing vehicle-mounted sensors, but direct registration becomes
-        unreliable when their fields of view or sensing modalities differ. NH-Calib exploits locally planar wheeled-
-        vehicle motion and a relaxed lateral-motion model. On the sensor-own-twist path, each sensor independently
-        estimates X, roll, pitch, and yaw; Z remains unobservable under planar motion, and only relative Y requires
-        cross-sensor association. Associated turning segments are time-aligned, integrated over interpolated common
-        boundaries, and combined through a sum-form relation and robust weighted least squares. The method is
-        evaluated with LiDAR and radar configurations from A2D2, RadarScenes, and Ford Multi-AV. Ground-truth
-        extrinsics are used only for scoring.
+    <figure class="teaser">
+      <img src="assets/fig01_nhc_4plus1plus1_v1.png" alt="Vehicle-mounted sensors and the motion constraints used by NH-Calib">
+      <figcaption>
+        Wheeled-vehicle motion lets each sensor estimate X, roll, pitch, and yaw independently.
+        Only relative Y requires association between sensors; Z is unobservable under planar motion.
+      </figcaption>
+    </figure>
+
+    <section class="text-section" id="abstract">
+      <h2>Abstract</h2>
+      <p>
+        Extrinsic calibration is difficult when vehicle-mounted sensors do not share a field of view or sensing
+        modality. NH-Calib uses metric ego-motion and wheeled-vehicle motion constraints to separate the calibration
+        problem by observability. Each sensor independently estimates X, roll, pitch, and yaw from its own twist.
+        Relative Y is recovered from associated turning segments using temporal alignment, common-window integration,
+        and robust weighted least squares. The method is evaluated on LiDAR and radar configurations from A2D2,
+        RadarScenes, and Ford Multi-AV; ground-truth extrinsics are used only for evaluation.
       </p>
     </section>
 
-    <section class="signal-strip" aria-label="Key properties">
-      <article>
-        <strong>Four DoF per sensor</strong>
-        <span>X, roll, pitch, and yaw are estimated from each sensor's own metric twist.</span>
-      </article>
-      <article>
-        <strong>Only Y requires association</strong>
-        <span>Relative Y is recovered from paired turns with time alignment and common-window integration.</span>
-      </article>
-      <article>
-        <strong>Cross-modal evaluation</strong>
-        <span>Validated with LiDAR and radar motion on A2D2, RadarScenes, and Ford Multi-AV.</span>
-      </article>
-    </section>
-
-    <section class="section section-narrow" id="overview">
-      <p class="section-kicker">Overview</p>
-      <h2>The vehicle's shared motion is the calibration signal.</h2>
-      <div class="two-column-copy">
-        <p>
-          Registration-based calibration relies on scene overlap, and conventional motion calibration couples all
-          parameters to inter-sensor temporal correspondence. This is restrictive for distributed or heterogeneous
-          onboard sensors.
-        </p>
-        <p>
-          NH-Calib decomposes the problem by observability. Four parameters are estimated independently per sensor,
-          while the remaining relative lateral translation is estimated only after associating compatible turns.
-        </p>
-      </div>
-    </section>
-
-    <section class="section" id="method">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Method</p>
-          <h2>Two stages with a common ego-motion interface.</h2>
-        </div>
-        <p>
-          Timestamped metric twists may come from LiDAR or radar odometry, GNSS/INS, or CAN/IMU. RadarScenes uses
-          Doppler velocity with time-aligned CAN yaw rate because radar point-cloud odometry was unreliable.
-        </p>
-      </div>
-
-      <figure class="figure-shell wide-figure">
-        <img src="assets/fig02_two_stage_pipeline_module_data_v6.png" alt="Two-stage NH-Calib pipeline from timestamped sensor ego-motion to relative five-DoF calibration" loading="lazy">
-        <figcaption>Stage 1 estimates per-sensor X, roll, pitch, and yaw; Stage 2 estimates relative Y from associated turns.</figcaption>
+    <section class="content-section" id="method">
+      <h2>Method</h2>
+      <p class="lead">
+        A common metric-twist interface admits LiDAR or radar odometry, GNSS/INS, and wheel-speed/IMU inputs.
+        The estimator separates sensor-local parameters from the single parameter that requires cross-sensor association.
+      </p>
+      <figure class="paper-figure">
+        <img src="assets/fig02_two_stage_pipeline_module_data_v6.png" alt="Two-stage NH-Calib architecture">
+        <figcaption>
+          <b>Stage 1:</b> sensor-local motion-plane alignment and X/Yaw estimation.
+          <b>Stage 2:</b> turn association, common-window integration, pairwise relative-Y estimation, and robust fusion.
+        </figcaption>
       </figure>
-
-      <div class="method-grid">
-        <article class="method-card">
-          <span class="step">01</span>
-          <h3>Per-sensor estimation</h3>
-          <p>Extract turns, align the motion plane, estimate X and yaw from the 2D-aligned twist, then remove the reference-common component.</p>
-        </article>
-        <article class="method-card">
-          <span class="step">02</span>
-          <h3>Pairwise Y estimation</h3>
-          <p>Associate turns, estimate timing offsets, interpolate common boundaries, and recover pairwise Y with sum-form integration.</p>
-        </article>
-        <article class="method-card">
-          <span class="step">03</span>
-          <h3>Robust integration</h3>
-          <p>Fuse pairwise relative-Y measurements with robust weighted least squares and output reference-relative five-DoF calibration.</p>
-        </article>
-      </div>
-
-      <figure class="figure-shell wide-figure">
-        <img src="assets/fig03_relative_y_sumform_v1.png" alt="Relative Y estimation from path-length differences and time-aligned common turning windows" loading="lazy">
-        <figcaption>Common-window integration converts paired turns into relative-Y measurements while limiting frame-level timing exposure.</figcaption>
+      <figure class="paper-figure compact-figure">
+        <img src="assets/fig03_relative_y_sumform_v1.png" alt="Relative Y estimation from associated turning segments">
+        <figcaption>
+          Segment integration removes the unknown common longitudinal motion. The remaining path-length difference is
+          linear in heading change and relative Y.
+        </figcaption>
       </figure>
     </section>
 
-    <section class="section results-section" id="results">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Experiments</p>
-          <h2>LiDAR and radar calibration without GT during estimation.</h2>
-        </div>
-        <p>
-          Errors are mean absolute errors over valid ordered sensor pairs. Values below are graph-integrated results;
-          lower is better.
-        </p>
-      </div>
-
-      <div class="metric-grid" aria-label="Relative Y accuracy">
-        <article class="metric-card metric-primary">
-          <span class="metric-dataset">A2D2 &middot; LiDAR</span>
-          <strong>2.85 <small>mm</small></strong>
-          <span>relative Y MAE &middot; 20 ordered pairs</span>
-        </article>
-        <article class="metric-card">
-          <span class="metric-dataset">RadarScenes &middot; radar</span>
-          <strong>16.71 <small>mm</small></strong>
-          <span>relative Y MAE &middot; 12 ordered pairs</span>
-        </article>
-        <article class="metric-card">
-          <span class="metric-dataset">Ford Log4 &middot; LiDAR</span>
-          <strong>31.29 <small>mm</small></strong>
-          <span>relative Y MAE &middot; 5 common windows</span>
-        </article>
-        <article class="metric-card">
-          <span class="metric-dataset">Ford Log5 &middot; LiDAR</span>
-          <strong>24.75 <small>mm</small></strong>
-          <span>relative Y MAE &middot; 14 common windows</span>
-        </article>
-        <article class="metric-card">
-          <span class="metric-dataset">Ford Log6 &middot; LiDAR</span>
-          <strong>7.28 <small>mm</small></strong>
-          <span>relative Y MAE &middot; 8 common windows</span>
-        </article>
-      </div>
-
-      <div class="table-wrap" role="region" aria-label="Relative calibration accuracy table" tabindex="0">
+    <section class="content-section" id="results">
+      <h2>Results</h2>
+      <p class="lead">
+        Relative errors are evaluated over valid ordered sensor pairs. Translation errors are reported in millimetres
+        and rotation errors in degrees.
+      </p>
+      <div class="table-scroll" role="region" aria-label="Relative calibration accuracy" tabindex="0">
         <table>
-          <caption>NH-Calib relative five-DoF MAE. Translation is in millimetres and rotation is in degrees.</caption>
           <thead>
             <tr>
-              <th scope="col">Dataset</th>
-              <th scope="col">Pairs</th>
-              <th scope="col">X &darr;</th>
-              <th scope="col">Y &darr;</th>
-              <th scope="col">Yaw &darr;</th>
-              <th scope="col">Roll &darr;</th>
-              <th scope="col">Pitch &darr;</th>
+              <th>Dataset</th>
+              <th>Pairs</th>
+              <th>X</th>
+              <th>Y</th>
+              <th>Yaw</th>
+              <th>Roll</th>
+              <th>Pitch</th>
             </tr>
           </thead>
           <tbody>
-            <tr><th scope="row">A2D2</th><td>20</td><td>10.90 mm</td><td>2.85 mm</td><td>0.098&deg;</td><td>0.191&deg;</td><td>0.112&deg;</td></tr>
-            <tr><th scope="row">RadarScenes</th><td>12</td><td>5.69 mm</td><td>16.71 mm</td><td>0.115&deg;</td><td>&mdash;</td><td>&mdash;</td></tr>
-            <tr><th scope="row">Ford Log4</th><td>12</td><td>45.37 mm</td><td>31.29 mm</td><td>0.203&deg;</td><td>0.479&deg;</td><td>2.075&deg;</td></tr>
+            <tr><th>A2D2</th><td>20</td><td>10.90 mm</td><td><b>2.85 mm</b></td><td>0.098&deg;</td><td>0.191&deg;</td><td>0.112&deg;</td></tr>
+            <tr><th>RadarScenes</th><td>12</td><td>5.69 mm</td><td><b>16.71 mm</b></td><td>0.115&deg;</td><td>&mdash;</td><td>&mdash;</td></tr>
+            <tr><th>Ford Log 4</th><td>12</td><td>45.37 mm</td><td><b>31.29 mm</b></td><td>0.203&deg;</td><td>0.479&deg;</td><td>2.075&deg;</td></tr>
           </tbody>
         </table>
       </div>
-
-      <figure class="figure-shell wide-figure">
-        <img src="assets/fig05_bev_triptych_v1.png" alt="Bird's-eye-view comparison of estimated and ground-truth relative sensor layouts" loading="lazy">
-        <figcaption>Relative layouts are anchored to one reference sensor for scoring and visualization; ground truth is never used by the estimator.</figcaption>
+      <p class="result-note">
+        Ford Logs 5 and 6 achieve relative-Y MAEs of 24.75 mm and 7.28 mm, respectively, showing the effect of
+        motion coverage and the number of valid turning windows.
+      </p>
+      <figure class="paper-figure">
+        <img src="assets/fig05_bev_triptych_v1.png" alt="Estimated and ground-truth relative sensor layouts">
+        <figcaption>
+          Estimated relative layouts on three datasets. One sensor is anchored only for visualization and scoring;
+          ground truth is not used during estimation.
+        </figcaption>
       </figure>
-
-      <figure class="figure-shell wide-figure">
-        <img src="assets/fig06_sync_dependency_v1.png" alt="Relative Y sensitivity to an injected inter-sensor timing offset" loading="lazy">
-        <figcaption>Inter-sensor timing dependence is confined to relative Y on the sensor-own-twist path; sum-form integration reduces frame-level sensitivity.</figcaption>
+      <figure class="paper-figure compact-figure">
+        <img src="assets/fig06_sync_dependency_v1.png" alt="Sensitivity of relative Y to inter-sensor timing offset">
+        <figcaption>
+          Timing dependence is confined to relative Y when sensor-own angular velocity is available. Common-window
+          sum-form integration reduces sensitivity compared with frame-wise differencing.
+        </figcaption>
       </figure>
     </section>
 
-    <section class="section" id="resources">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Resources</p>
-          <h2>Reproducibility package.</h2>
-        </div>
-        <p>Paper, code, and processed evaluation assets will be released through this project site.</p>
-      </div>
-      <div class="resource-grid">
-        <article><span>PDF</span><h3>Paper</h3><p>Anonymous manuscript containing the method, analysis, experiments, and ablations.</p><span class="status">In preparation</span></article>
-        <article><span>Git</span><h3>Code</h3><p>Calibration pipeline, dataset adapters, evaluation scripts, and configurations.</p><span class="status">Upon publication</span></article>
-        <article><span>Data</span><h3>Processed data</h3><p>Motion inputs and intermediate outputs permitted by the source dataset licenses.</p><span class="status">Upon publication</span></article>
-        <article><span>Docs</span><h3>Documentation</h3><p>Usage instructions, data conventions, and reproduction recipes.</p><span class="status">Upon publication</span></article>
-      </div>
-
-      <div class="bibtex-block">
-        <div>
-          <p class="section-kicker">Citation</p>
-          <h3>BibTeX</h3>
-        </div>
-        <pre><code>@misc{nhcalib2027,
+    <section class="text-section" id="citation">
+      <h2>Citation</h2>
+      <p>The archival citation, manuscript, and implementation will be released after publication.</p>
+      <pre><code>@misc{nhcalib2027,
   title  = {NH-Calib: Vehicle-Motion-Constrained Self-Calibration
             of Onboard Sensor Extrinsics},
   author = {Anonymous},
   year   = {2027},
   note   = {Manuscript in preparation}
 }</code></pre>
-        <p class="draft-warning">The archival citation and author information will be added upon publication.</p>
-      </div>
     </section>
   </main>
 
   <footer>
-    <span>NH-Calib &middot; anonymous project page</span>
-    <span>Last content sync: 16 September 2026</span>
+    <span>NH-Calib</span>
+    <span>Last updated September 2026</span>
   </footer>
 </body>
 </html>
