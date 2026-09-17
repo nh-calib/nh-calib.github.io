@@ -32,6 +32,12 @@ NAV = [
         ("datasets.html", "Datasets &amp; front end"),
         ("results.html", "Results &amp; metric"),
     ]),
+    ("Behind the paper", [
+        ("data-inventory.html", "Sensor &amp; drive inventory"),
+        ("segments.html", "Turn segments in the data"),
+        ("odometry.html", "Odometry front end results"),
+        ("ablations.html", "Ablation catalogue"),
+    ]),
     ("Reference", [
         ("notation.html", "Notation &amp; frames"),
         ("parameters.html", "Parameter reference"),

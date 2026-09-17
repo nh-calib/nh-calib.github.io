@@ -16,8 +16,9 @@ import wiki_content_a as A       # noqa: E402
 import wiki_content_b as B       # noqa: E402
 import wiki_content_c as C       # noqa: E402
 import wiki_content_d as D       # noqa: E402
+import wiki_content_e as E       # noqa: E402
 
-ORDER = ([C.INDEX, C.OBS] + A.PAGES + B.PAGES + D.PAGES
+ORDER = ([C.INDEX, C.OBS] + A.PAGES + B.PAGES + D.PAGES + E.PAGES
          + [C.NOTATION, C.PARAMS, C.FAIL])
 
 
