@@ -28,6 +28,10 @@ NAV = [
         ("sum-form.html", "B2 &middot; Sum-form relative Y"),
         ("graph.html", "B3 &middot; Graph integration"),
     ]),
+    ("Evaluation", [
+        ("datasets.html", "Datasets &amp; front end"),
+        ("results.html", "Results &amp; metric"),
+    ]),
     ("Reference", [
         ("notation.html", "Notation &amp; frames"),
         ("parameters.html", "Parameter reference"),

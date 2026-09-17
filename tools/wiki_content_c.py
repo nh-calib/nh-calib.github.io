@@ -34,6 +34,10 @@ INDEX = {
              "text": "Why integrating over a turn removes the unknown vehicle speed."},
             {"href": "notation.html", "tag": "Reference", "title": "Notation &amp; frames",
              "text": "Symbols, frames, Euler order and sign conventions used across the wiki."},
+            {"href": "results.html", "tag": "Evidence", "title": "Results &amp; metric",
+             "text": "What the method scored on three public datasets, and what each number does not claim."},
+            {"href": "datasets.html", "tag": "Evidence", "title": "Datasets &amp; front end",
+             "text": "Sensor layouts, odometry settings, time handling and excluded drives."},
         ]},
 
         {"t": "h", "level": 2, "id": "pipeline", "text": "Pipeline at a glance"},

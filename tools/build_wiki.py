@@ -15,8 +15,10 @@ import wiki_render as R          # noqa: E402
 import wiki_content_a as A       # noqa: E402
 import wiki_content_b as B       # noqa: E402
 import wiki_content_c as C       # noqa: E402
+import wiki_content_d as D       # noqa: E402
 
-ORDER = [C.INDEX, C.OBS] + A.PAGES + B.PAGES + [C.NOTATION, C.PARAMS, C.FAIL]
+ORDER = ([C.INDEX, C.OBS] + A.PAGES + B.PAGES + D.PAGES
+         + [C.NOTATION, C.PARAMS, C.FAIL])
 
 
 def normalize(pages):

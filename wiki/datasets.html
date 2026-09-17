@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Dataset layouts, odometry front ends and time handling behind the reported NH-Calib results.">
+<title>Datasets and front end &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Evaluation</div><ul><li><a href="datasets.html" class="on">Datasets &amp; front end</a></li><li><a href="results.html">Results &amp; metric</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">NH-Calib &rsaquo; Algorithm wiki &rsaquo; Evaluation</div>
+<h1>Datasets and front end</h1>
+<aside class="infobox"><div class="ibtitle">Evaluation inputs</div><table><tr><th>Datasets</th><td>A2D2, RadarScenes, Ford Multi-AV</td></tr><tr><th>Vehicle experiments</th><td>None in-house &mdash; public recordings only</td></tr><tr><th>LiDAR front end</th><td>KISS-ICP pose differentiation</td></tr><tr><th>Radar front end</th><td>Doppler ego-velocity + CAN yaw rate</td></tr><tr><th>Ground truth</th><td>Official extrinsics, scoring only</td></tr><tr><th>Excluded drives</th><td>Ford Log2, Log3</td></tr></table></aside>
+<p class="tagline">What was run on what. Sensor layout, ego-motion front end, time handling, reference channel and exclusions for each of the three public datasets used in the reported evaluation.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#why">Why these three</a></li><li><span class="tocno">2</span><a href="#motion">Ego-motion input per dataset</a></li><li><span class="tocno">3</span><a href="#frontend">Front-end settings</a></li><li><span class="tocno">4</span><a href="#radar-loop">RadarScenes: alternating offset and calibration</a></li><li><span class="tocno">5</span><a href="#exclusions">What was excluded, and why it is reported</a></li><li><span class="tocno">6</span><a href="#gt">Where ground truth is and is not used</a></li></ul></div>
+<h2 id="why"><span class="secno">1</span> Why these three</h2>
+<p>The three datasets were not chosen to be easy. They were chosen because they place the method in three different observational regimes, and the method behaves differently in each &mdash; which is the part of the evaluation that carries information.</p>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Dataset</th><th>Layout and motion input</th><th>What it tests</th></tr></thead><tbody><tr><td>A2D2</td><td>Five LiDARs; lateral channels share almost no structure with the front one. LiDAR odometry twist.</td><td>The no-overlap regime &mdash; the side sensors cannot be registered against the reference at all.</td></tr><tr><td>RadarScenes</td><td>Four radars; geometric radar odometry unusable. Doppler ego-velocity with CAN yaw rate.</td><td>The alternative-input regime &mdash; the motion signal is constructed, not sensor-only odometry.</td></tr><tr><td>Ford Multi-AV</td><td>Four 360&deg; LiDARs with broad common structure. LiDAR odometry twist.</td><td>The favourable case for registration &mdash; included as the honest comparison point.</td></tr></tbody></table></div><figcaption>The Ford layout is the one where a classical overlapping-view method should win. It is included for that reason.</figcaption></figure>
+<div class="note note"><span class="notelabel">Note</span><div>A2D2 is real sensor data, not simulation. No in-house vehicle experiment is part of the reported results.</div></div>
+<h2 id="motion"><span class="secno">2</span> Ego-motion input per dataset</h2>
+<p>NH-Calib consumes a metric twist, not points. What produces that twist differs by dataset, and the difference matters when reading the results table.</p>
+<div class="steps"><div class="step"><div class="stepno">1</div><div class="stepbody"><h4>A2D2 and Ford &mdash; LiDAR odometry only</h4><p>Continuous poses are estimated with KISS-ICP and differentiated to give linear and angular velocity. No external signal enters the estimate.</p></div></div><div class="step"><div class="stepno">2</div><div class="stepbody"><h4>RadarScenes &mdash; Doppler plus CAN</h4><p>Geometric radar odometry was not reliable enough in the tested configuration, so Doppler ego-velocity is combined with a temporally aligned CAN yaw rate. This is an alternative input path, and the manuscript reports it as such rather than as a sensor-only five-degree-of-freedom result.</p></div></div><div class="step"><div class="stepno">3</div><div class="stepbody"><h4>Sign gauge is never taken from CAN</h4><p>In every dataset the rotation-axis sign is a gauge convention anchored to the chosen reference sensor. See <a href='gauge.html'>A3 &middot; Rotation-sign gauge</a>.</p></div></div></div>
+<div class="note warn"><span class="notelabel">Caution</span><div>Because the RadarScenes twist depends on an external CAN signal, alignment error against that signal propagates into X. The usability and the independence limits of that path are reported together; it is not interchangeable with the LiDAR-only results.</div></div>
+<h2 id="frontend"><span class="secno">3</span> Front-end settings</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Setting</th><th>A2D2</th><th>Ford Multi-AV</th><th>RadarScenes</th></tr></thead><tbody><tr><td>Odometry</td><td>KISS-ICP</td><td>KISS-ICP 1.2.3</td><td>&mdash; (Doppler + CAN)</td></tr><tr><td>Registration voxel</td><td>0.20 m</td><td>0.30 m</td><td>&mdash;</td></tr><tr><td>Range window</td><td>5&ndash;80 m</td><td>2&ndash;80 m</td><td>&mdash;</td></tr><tr><td>Ego-body filter</td><td>off</td><td>off</td><td>&mdash;</td></tr><tr><td>Deskew</td><td>none</td><td>explicit point-time deskew; KISS internal deskew disabled</td><td>&mdash;</td></tr><tr><td>Frame interval</td><td>fixed 30 Hz</td><td>actual scan time differences per Log</td><td>sample timestamps</td></tr><tr><td>Reference sensor</td><td>FRONT_CENTER</td><td>RED</td><td>RADAR_1</td></tr><tr><td>Scored targets</td><td>4</td><td>3 per Log</td><td>3</td></tr></tbody></table></div><figcaption>Front-end configuration for the reported runs. The two LiDAR datasets differ in voxel size, range and deskew handling; neither was tuned per sensor channel.</figcaption></figure>
+<div class="note key"><span class="notelabel">Key point</span><div>The A2D2 fixed 30 Hz interval is not a convenience approximation. The stored intervals contain an alternating error, so both the time axis and the velocity reconstructed from pose increments are corrected consistently. Using the stored intervals directly corrupts every downstream velocity.</div></div>
+<h2 id="radar-loop"><span class="secno">4</span> RadarScenes: alternating offset and calibration</h2>
+<p>For RadarScenes the time offset and the calibration are updated alternately for three iterations before the final two-dimensional evaluation. Roll and Pitch are not estimation targets for this dataset, because the Doppler-plus-CAN input is two-dimensional by construction. The final run estimated a slip coefficient of <i>c</i> = 0.0049.</p>
+<h2 id="exclusions"><span class="secno">5</span> What was excluded, and why it is reported</h2>
+<ul><li><strong>Ford Log2 and Log3</strong> did not contain enough valid turn segments and were excluded from calibration. They are reported as applicability failures rather than silently dropped &mdash; a drive with too little turning is outside the method's operating regime, and hiding that would misstate the regime.</li><li><strong>Ford segment acceptance</strong> requires the input angular-rate cosine gate and the normalised error gate to pass; a drive is rejected when too few valid associated turns survive. See <a href='failure-modes.html'>Gates and failure modes</a>.</li><li><strong>Ford Log4, Log5 and Log6</strong> use identical timestamp handling and KISS-ICP settings but are scored as three independent evaluation sets. Neither the minimum across Logs nor a pooled value is presented as representing Ford as a whole.</li></ul>
+<div class="note warn"><span class="notelabel">Caution</span><div>Ford INS and official ground-truth poses may share a positioning source. They are therefore not interpreted as an independent motion reference.</div></div>
+<h2 id="gt"><span class="secno">6</span> Where ground truth is and is not used</h2>
+<p>All main-result cells are ground-truth-free during estimation. Official extrinsics enter only at scoring time, through the reference-sensor anchor described on the <a href='results.html#metric'>results page</a>. Segment acceptance and graph weights are determined without ground truth. The one experiment that does inject ground truth into the pipeline &mdash; the attitude oracle &mdash; is labelled separately and is a diagnostic, not a result.</p>
+<section class="seealso"><h2>See also</h2><ul><li><a href="results.html">Results and metric</a> &mdash; the numbers these settings produced</li><li><a href="failure-modes.html">Gates and failure modes</a> &mdash; what rejects a segment, a pair or a whole drive</li><li><a href="parameters.html">Parameter reference</a> &mdash; every knob and the ones that actually move the result</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

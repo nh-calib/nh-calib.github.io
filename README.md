@@ -13,7 +13,7 @@ Published at <https://nh-calib.github.io/>.
 - Graph-integrated relative calibration results for A2D2, RadarScenes, and Ford Multi-AV Logs 4--6.
 - Anonymous resource placeholders for the paper, code, processed data, and documentation.
 - `algorithm.html` &mdash; a single scrollable visual walkthrough of the pipeline.
-- `wiki/` &mdash; a generated, page-per-algorithm reference (13 pages).
+- `wiki/` &mdash; a generated, page-per-algorithm reference (15 pages).
 
 ## Algorithm wiki
 
@@ -26,6 +26,7 @@ Published at <https://nh-calib.github.io/>.
 | `tools/wiki_content_a.py` | Stage 1 pages (A1 turn segments, A2 motion-plane alignment, A3 sign gauge, A4 X/yaw/slip, A5 relativization) |
 | `tools/wiki_content_b.py` | Stage 2 pages (B1 alignment and windows, B2 sum-form relative Y, B3 graph integration) |
 | `tools/wiki_content_c.py` | Index, observability decomposition, notation, parameters, failure modes |
+| `tools/wiki_content_d.py` | Evaluation pages (datasets and front end, results and metric) |
 | `wiki/wiki.css` | Wiki stylesheet (hand-edited) |
 
 Rebuild after any content change:
