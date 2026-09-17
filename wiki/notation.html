@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Reference table of symbols, frames and conventions in NH-Calib.">
+<title>Notation and frames &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html" class="on">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Reference</div>
+<h1>Notation and frames</h1>
+<aside class="infobox"><div class="ibtitle">Notation and frames</div><table><tr><th>Vehicle frame</th><td>Origin at rear-axle centre; X forward, Y left, Z up</td></tr><tr><th>Euler order</th><td>R = R<sub>z</sub>(yaw) R<sub>y</sub>(pitch) R<sub>x</sub>(roll)</td></tr><tr><th>Angles</th><td>radians internally, degrees in reported output</td></tr><tr><th>Rotation composition</th><td>matrix product, never Euler subtraction</td></tr><tr><th>Reference sensor</th><td>same channel for gauge anchor, relativization and graph node</td></tr></table></aside>
+<p class="tagline">Symbols, coordinate frames and sign conventions used throughout the wiki. Where a sign could be read two ways, the convention is stated explicitly rather than implied.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#frames">Frames</a></li><li><span class="tocno">2</span><a href="#symbols">Symbols</a></li><li><span class="tocno">3</span><a href="#signs">Sign conventions</a></li><li><span class="tocno">4</span><a href="#axes">Axis naming in results</a></li></ul></div>
+<h2 id="frames"><span class="secno">1</span> Frames</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Frame</th><th>Definition</th></tr></thead><tbody><tr><td>Vehicle <span class='sym'>V</span></td><td>Right-handed; origin at the rear-axle centre; X forward, Y left, Z up. The non-holonomic constraint is stated at this origin.</td></tr><tr><td>Sensor <span class='sym'>S</span><sub>j</sub></td><td>The frame in which sensor j's odometry reports its twist. Its pose in the vehicle frame is the calibration target.</td></tr><tr><td>Levelled frame</td><td>Sensor frame after A2's levelling rotation. Its z-axis coincides with the motion-plane normal; its remaining freedom about that axis is the mounting yaw.</td></tr><tr><td>Reference-relative frame</td><td>The frame of the designated reference sensor. All reported results live here.</td></tr></tbody></table></div></figure>
+<div class="note gauge"><span class="notelabel">Convention</span><div>The vehicle frame recovered by NH-Calib is defined by the motion plane the platform actually travelled on and by the convention that the reference sensor is upright. It is not asserted to coincide with a surveyed physical body frame.</div></div>
+<h2 id="symbols"><span class="secno">2</span> Symbols</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Symbol</th><th>Meaning</th><th>Unit / frame</th></tr></thead><tbody><tr><td><span class='sym'>&xi;</span><sub>j</sub>(t)</td><td>Sensor twist, linear and angular velocity stacked</td><td>m/s, rad/s; sensor frame</td></tr><tr><td>v<sub>j,x</sub>, v<sub>j,y</sub></td><td>Sensor-origin linear velocity components</td><td>m/s</td></tr><tr><td><span class='sym'>&omega;</span><sub>j</sub></td><td>Sensor angular velocity vector</td><td>rad/s; sensor frame</td></tr><tr><td>&omega;(t)</td><td>Scalar platform turn rate</td><td>rad/s</td></tr><tr><td>&omega;<sub>turn</sub></td><td>Yaw-centric detection scalar, &#8214;&omega;&#8214;&middot;sign(&omega;<sub>z</sub>)</td><td>rad/s</td></tr><tr><td>v<sub>c</sub></td><td>Platform forward speed from chassis, INS or CAN</td><td>m/s; vehicle frame</td></tr><tr><td><strong>a</strong><sub>j</sub></td><td>Estimated rotation axis of sensor j</td><td>unit vector; sensor frame</td></tr><tr><td><span class='sym'>&phi;</span><sub>j</sub>, <span class='sym'>&theta;</span><sub>j</sub>, <span class='sym'>&psi;</span><sub>j</sub></td><td>Mounting roll, pitch, yaw</td><td>rad internally, deg reported</td></tr><tr><td>p<sub>x,j</sub>, p<sub>y,j</sub>, p<sub>z,j</sub></td><td>Sensor lever arm in the vehicle frame</td><td>m</td></tr><tr><td>c</td><td>Shared slip coefficient (nuisance parameter)</td><td>s&sup2;/m</td></tr><tr><td>W<sub>k</sub></td><td>Net heading change of segment k</td><td>rad</td></tr><tr><td>T<sub>k</sub></td><td>Duration of segment k</td><td>s</td></tr><tr><td>I<sub>j,k</sub></td><td>Forward displacement of sensor j over the common window of segment k</td><td>m</td></tr><tr><td><span class='sym'>&Delta;</span>I<sub>k</sub></td><td>Arc-length difference of the sensor pair</td><td>m</td></tr><tr><td>Z<sub>k</sub></td><td>Regression observation formed from the segment difference</td><td>m</td></tr><tr><td>w<sub>k</sub>, w<sub>ij</sub></td><td>Segment weight and pairwise edge confidence</td><td>&mdash;</td></tr><tr><td>d<sub>ij</sub></td><td>Pairwise relative lateral measurement</td><td>m</td></tr><tr><td><span class='sym'>&tau;</span><sub>ij</sub></td><td>Estimated clock offset of a sensor pair</td><td>s</td></tr><tr><td>N<sub>w</sub></td><td>Odd smoothing window length in samples</td><td>count</td></tr></tbody></table></div></figure>
+<h2 id="signs"><span class="secno">3</span> Sign conventions</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Quantity</th><th>Convention</th><th>Where it matters</th></tr></thead><tbody><tr><td>Yaw rate</td><td>Positive for a left turn, consistent with a Z-up vehicle frame</td><td>Turn detection, gauge decision</td></tr><tr><td>Lateral offset</td><td>Positive to the left of the rear-axle centre</td><td>All lateral results</td></tr><tr><td><span class='sym'>&Delta;</span>I and <span class='sym'>&Delta;</span>p<sub>y</sub></td><td><span class='sym'>&Delta;</span>I = I<sub>i</sub> &minus; I<sub>j</sub> is paired with <span class='sym'>&Delta;</span>p<sub>y,ij</sub> = p<sub>y,i</sub> &minus; p<sub>y,j</sub>, giving <span class='sym'>&Delta;</span>I = &minus;<span class='sym'>&Delta;</span>p<sub>y</sub>W</td><td><a href='sum-form.html'>B2</a> regression &mdash; the minus sign is not optional</td></tr><tr><td>Slip term</td><td>v<sub>c,y</sub> &asymp; &minus;c v<sub>c</sub><sup>2</sup>&omega;, so c = 0 recovers the classical constraint</td><td><a href='m3-x-yaw.html'>A4</a> residual</td></tr><tr><td>Rotation axis</td><td>Defined up to a 180&deg; flip; the global branch is a declared convention</td><td><a href='gauge.html'>A3</a></td></tr></tbody></table></div></figure>
+<div class="note warn"><span class="notelabel">Caution</span><div>Relative rotations are always taken as matrix products R&#770;<sub>rj</sub> = R&#770;<sub>Vr</sub><sup>&#8868;</sup>R&#770;<sub>Vj</sub>. Subtracting Euler angles gives a different answer as soon as two of the angles are not small, and the difference is large enough to matter at the accuracy level being reported.</div></div>
+<h2 id="axes"><span class="secno">4</span> Axis naming in results</h2>
+<p>Tables and plots use X, Y, Yaw, Roll and Pitch as column labels. Equations keep the symbolic forms p<sub>x</sub>, p<sub>y</sub> and <span class='sym'>&psi;</span>. The two refer to the same quantities; the split exists so that result tables stay readable without subscripts.</p>
+<section class="seealso"><h2>See also</h2><ul><li><a href="parameters.html">Parameter reference</a> &mdash; numeric defaults for every symbol that has one</li><li><a href="observability.html">Observability decomposition</a> &mdash; which of these symbols are actually solvable</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

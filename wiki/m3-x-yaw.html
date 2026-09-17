@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Per-sensor yaw and longitudinal lever arm from the lateral non-holonomic residual.">
+<title>A4 &middot; X, Yaw and slip &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html" class="on">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Stage 1 &rsaquo; A4</div>
+<h1>A4 &middot; X, Yaw and slip</h1>
+<aside class="infobox"><div class="ibtitle">A4 &middot; X, Yaw and slip</div><table><tr><th>Stage</th><td>1 &mdash; per sensor, no association</td></tr><tr><th>Input</th><td>Levelled two-dimensional twist; platform forward speed v<sub>c</sub>; yaw rate</td></tr><tr><th>Estimates</th><td><span class='sym'>&psi;</span><sub>j</sub>, p<sub>x,j</sub> per sensor; one shared c</td></tr><tr><th>Solver</th><td>Huber-weighted IRLS Gauss&ndash;Newton</td></tr><tr><th>Sample gate</th><td>At least 50 samples per channel after the planar gate</td></tr><tr><th>Caveat</th><td>c is a nuisance parameter, not a vehicle property</td></tr></table></aside>
+<p class="tagline">The non-holonomic constraint says the rear-axle centre has no lateral velocity. Any lateral velocity a sensor measures during a turn is therefore its own longitudinal lever arm &mdash; which makes X and Yaw solvable from that sensor alone.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#idea">The constraint that does the work</a></li><li><span class="tocno">2</span><a href="#slip">Relaxing the constraint for tire sideslip</a></li><li><span class="tocno">3</span><a href="#residual">Residual and unknowns</a></li><li><span class="tocno">4</span><a href="#solver">Robust solver</a></li><li><span class="tocno">5</span><a href="#gate">Sample gate</a></li><li><span class="tocno">6</span><a href="#sync">Timing behaviour</a></li></ul></div>
+<h2 id="idea"><span class="secno">1</span> The constraint that does the work</h2>
+<p>A wheeled platform cannot slide sideways at the rear-axle centre. Under the nominal non-holonomic constraint v<sub>c,y</sub> = 0, and the lateral velocity seen at a sensor origin during a turn is produced entirely by the sensor's longitudinal offset.</p>
+<div class="eq"><span class="eqtag">(A4.1)</span><span class="eqbody">v<sub>j,y</sub> = v<sub>c,y</sub> + &omega; p<sub>x,j</sub> &nbsp;&nbsp;&xrarr;&nbsp;&nbsp; v<sub>j,y</sub> = &omega; p<sub>x,j</sub>&nbsp;&nbsp;(nominal NHC)</span><span class="eqcap">No reference to any other sensor appears. This is why X and yaw belong to the association-free group.</span></div>
+<p>The sensor's own measurement is expressed in its own frame, so the unknown mounting yaw <span class='sym'>&psi;</span><sub>j</sub> appears as the rotation that brings that measurement onto the platform's lateral axis. Yaw and X are therefore estimated jointly from the same residual.</p>
+<h2 id="slip"><span class="secno">2</span> Relaxing the constraint for tire sideslip</h2>
+<p>Perfect no-slip does not hold in real driving. Lateral tire slip grows with lateral acceleration, so the rear-axle lateral velocity is approximated by a speed-and-rate dependent term with a single shared coefficient.</p>
+<div class="eq"><span class="eqtag">(A4.2)</span><span class="eqbody">v<sub>c,y</sub> &asymp; &minus; c v<sub>c</sub><sup>2</sup> &omega;</span><span class="eqcap">One coefficient c is shared by all sensors, because it describes the platform rather than any individual mounting. Setting c = 0 recovers the classical non-holonomic constraint exactly.</span></div>
+<div class="note warn"><span class="notelabel">c absorbs odometry bias</span><div>Empirically the fitted c changes sign with the odometry front end and with the voxel size used by it. It is therefore treated as a nuisance parameter that absorbs a common odometry bias, not as a physical vehicle characteristic. Its main victim is <em>absolute</em> X; relative X is protected because the bias is common-mode. Physical interpretation of c is not claimed.</div></div>
+<h2 id="residual"><span class="secno">3</span> Residual and unknowns</h2>
+<div class="eq"><span class="eqtag">(A4.3)</span><span class="eqbody">r<sub>j,k</sub> = sin<span class='sym'>&psi;</span><sub>j</sub> &#7797;<sub>x,j,k</sub> + cos<span class='sym'>&psi;</span><sub>j</sub> &#7797;<sub>y,j,k</sub> &minus; &omega;<sub>j,k</sub> p<sub>x,j</sub> + v<sub>c,j,k</sub> tan( c v<sub>c,j,k</sub> &omega;<sub>j,k</sub> )</span><span class="eqcap">Per-sample lateral residual for sensor j. The first two terms rotate the levelled sensor velocity into platform axes, the third is the lever-arm term, the fourth is the slip correction.</span></div>
+<div class="eq"><span class="eqtag">(A4.4)</span><span class="eqbody"><span class='sym'>&theta;</span> = [ <span class='sym'>&psi;</span><sub>1</sub>, p<sub>x,1</sub>, &hellip;, <span class='sym'>&psi;</span><sub>J</sub>, p<sub>x,J</sub>, c ]<sup>&#8868;</sup></span><span class="eqcap">Arrow-shaped parameter vector: two parameters per sensor plus one coupling scalar. The normal equations are block-sparse and the shared coefficient can be eliminated by Schur complement.</span></div>
+<div class="note key"><span class="notelabel">Key point</span><div>The only cross-sensor coupling in Stage 1 is the shared c through the platform speed channel. With c fixed at zero the sensors decouple completely.</div></div>
+<h2 id="solver"><span class="secno">4</span> Robust solver</h2>
+<figure class="tablewrap num"><div class="tscroll"><table><thead><tr><th>Setting</th><th>Value</th><th>Role</th></tr></thead><tbody><tr><td>Initial <span class='sym'>&psi;</span>, p<sub>x</sub>, c</td><td>0, 0&nbsp;m, 0</td><td>Reported configuration. A design variant initialises <span class='sym'>&psi;</span> from the median heading agreement with the platform and p<sub>x</sub> at 1&nbsp;m.</td></tr><tr><td>Robust loss</td><td>Huber, constant 1.345</td><td>Standard 95% efficiency choice for Gaussian cores</td></tr><tr><td>Residual scale</td><td>max(1.4826 &middot; MAD, 10<sup>&minus;3</sup>&nbsp;m/s)</td><td>Data-driven scale with a floor, so a near-perfect fit cannot collapse the weights</td></tr><tr><td>Weight</td><td>Huber(r / scale) / scale<sup>2</sup></td><td>IRLS reweighting applied each iteration</td></tr><tr><td>Step caps</td><td>0.3&nbsp;rad, 1&nbsp;m, 0.004&nbsp;s&sup2;/m</td><td>Prevents divergence from a bad first linearization</td></tr><tr><td>Iterations</td><td>at most 60</td><td>Convergence when the largest step falls below 10<sup>&minus;11</sup></td></tr></tbody></table></div></figure>
+<p>Slip significance is reported as the chi-square improvement of the fitted coefficient over the c = 0 model. The core computes the statistic and reports it; it does not apply a pass or fail threshold.</p>
+<h2 id="gate"><span class="secno">5</span> Sample gate</h2>
+<p>Before fitting, samples pass a planar-excitation gate. Its purpose is to keep only samples where the lever-arm term is actually excited and the inputs are mutually valid.</p>
+<ul><li>Sensor timestamp lies inside the platform-speed time range.</li><li>Selected yaw rate magnitude is at least the excitation floor (default 15&nbsp;deg/s).</li><li>Platform forward speed magnitude is at least 1.0&nbsp;m/s.</li><li>Levelled sensor yaw rate stays below the sanity bound (default 60&nbsp;deg/s).</li><li>The sample lies inside an accepted turn segment from A1.</li></ul>
+<div class="note warn"><span class="notelabel">Caution</span><div>Fewer than 50 surviving samples drops the channel at stage <code>planar</code>. This is the most common drop in practice for sequences with little turning.</div></div>
+<h2 id="sync"><span class="secno">6</span> Timing behaviour</h2>
+<p>When the yaw rate in (A4.3) is the sensor's own, a clock shift applied to any other sensor does not change a single input of this estimator. Roll, pitch, yaw and X are then exactly invariant to inter-sensor time offsets &mdash; a measured, not merely argued, property.</p>
+<div class="note warn"><span class="notelabel">The substitution that costs this property</span><div>If a sensor cannot estimate its own angular rate and a platform yaw-rate signal is substituted, the estimator becomes sensitive to the offset between that sensor and the platform clock, and X loses its synchronization-free status. The substitution remains useful for sensors that cannot produce geometric odometry at all, but it is a documented limitation rather than part of the main claim.</div></div>
+<section class="seealso"><h2>See also</h2><ul><li><a href="relativization.html">A5 &middot; Reference relativization</a> &mdash; what happens to these estimates next</li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a> &mdash; the same lever arm applied to forward velocity</li><li><a href="parameters.html">Parameter reference</a> &mdash; solver constants in one table</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

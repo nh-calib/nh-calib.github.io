@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Roll and pitch from the dominant angular-velocity axis under locally planar motion.">
+<title>A2 &middot; Motion-plane alignment &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html" class="on">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Stage 1 &rsaquo; A2</div>
+<h1>A2 &middot; Motion-plane alignment</h1>
+<aside class="infobox"><div class="ibtitle">A2 &middot; Motion-plane alignment</div><table><tr><th>Stage</th><td>1 &mdash; per sensor, no association</td></tr><tr><th>Input</th><td>Angular velocity <span class='sym'>&omega;</span><sup>S</sup><sub>j</sub>(t) inside accepted turns</td></tr><tr><th>Output</th><td>Axis <strong>a</strong><sub>j</sub>, levelling rotation, roll <span class='sym'>&phi;</span><sub>j</sub>, pitch <span class='sym'>&theta;</span><sub>j</sub></td></tr><tr><th>Sample gate</th><td>15&nbsp;deg/s &le; &#8214;&omega;&#8214; &le; 60&nbsp;deg/s, at least 20 samples</td></tr><tr><th>Ambiguity</th><td>180&deg; branch of the axis &mdash; resolved by <a href='gauge.html'>A3</a></td></tr><tr><th>Not observable</th><td>Rotation about the axis itself (that is yaw &rarr; <a href='m3-x-yaw.html'>A4</a>)</td></tr></table></aside>
+<p class="tagline">A wheeled platform on a locally planar road rotates about one axis: the plane normal. Whatever direction that axis has in a sensor frame is the sensor's mounting tilt. A2 recovers it from the sensor's own angular velocity, with no second sensor involved.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#idea">The geometric statement</a></li><li><span class="tocno">2</span><a href="#proc">Procedure</a></li><li><span class="tocno">3</span><a href="#why-relative">Why the reported roll and pitch are relative</a></li><li><span class="tocno">4</span><a href="#out">Outputs and diagnostics</a></li></ul></div>
+<h2 id="idea"><span class="secno">1</span> The geometric statement</h2>
+<p>Within one calibration segment the platform follows a single local motion plane. Its angular velocity is then parallel to that plane's normal at all times; only the magnitude changes. Expressed in the frame of a rigidly mounted sensor, this becomes a collinearity statement whose direction is fixed by the mounting rotation.</p>
+<div class="eq"><span class="eqtag">(A2.1)</span><span class="eqbody"><span class='sym'>&omega;</span><sup>S</sup><sub>j</sub>(t) &nbsp;&#8771;&nbsp; &omega;(t) &middot; <strong>a</strong><sub>j</sub>, &nbsp;&nbsp;&nbsp; <strong>a</strong><sub>j</sub> = R<sub>j</sub><sup>&#8868;</sup> <strong>e</strong><sub>z</sub></span><span class="eqcap">&omega;(t) is the shared scalar turn rate of the platform; <strong>a</strong><sub>j</sub> is the motion-plane normal written in sensor j's frame. Estimating a direction, not a rate, is what makes this step insensitive to inter-sensor timing.</span></div>
+<div class="note key"><span class="notelabel">Key point</span><div>Because (A2.1) involves only sensor j's own angular velocity, roll and pitch need no field-of-view overlap, no common modality and no clock alignment with any other sensor. This is the first of the four degrees of freedom that NH-Calib estimates without association.</div></div>
+<h2 id="proc"><span class="secno">2</span> Procedure</h2>
+<div class="steps"><div class="step"><div class="stepno">1</div><div class="stepbody"><h4>Select informative samples</h4><p>Keep samples inside accepted turns whose angular-rate magnitude lies between the lower information bound and the upper sanity bound. Below the lower bound the direction is noise; above the upper bound the sample is more likely an odometry failure than a real manoeuvre.</p></div></div><div class="step"><div class="stepno">2</div><div class="stepbody"><h4>Align sample signs</h4><p>The measured vectors point along &plusmn;<strong>a</strong><sub>j</sub> depending on turn direction. They are sign-aligned against the strongest sample so that left and right turns reinforce rather than cancel each other.</p></div></div><div class="step"><div class="stepno">3</div><div class="stepbody"><h4>Form the representative axis</h4><p>Sum the aligned unit directions weighted by their magnitudes and normalize. Fast rotation carries more directional information than slow rotation, so magnitude weighting is the natural estimator here. Trimming is disabled by default; the sample gate already removes the dangerous tails.</p></div></div><div class="step"><div class="stepno">4</div><div class="stepbody"><h4>Fix the branch</h4><p>The magnitude-weighted axis is defined only up to a 180&deg; flip. The branch consistent with a coarse initial mounting orientation is selected; the systematic treatment is in A3.</p></div></div><div class="step"><div class="stepno">5</div><div class="stepbody"><h4>Level</h4><p>Build the minimum Rodrigues rotation taking <strong>a</strong><sub>j</sub> to the vertical axis <strong>e</strong><sub>z</sub>. Its first two ZYX Euler angles are the reported roll and pitch.</p></div></div></div>
+<div class="eq"><span class="eqtag">(A2.2)</span><span class="eqbody"><strong>a</strong><sub>j</sub> = normalize( &sum;<sub>k</sub> &#8214;<span class='sym'>&omega;</span><sub>k</sub>&#8214; &middot; s<sub>k</sub> <span class='sym'>&omega;&#770;</span><sub>k</sub> ), &nbsp;&nbsp; s<sub>k</sub> = sign( <span class='sym'>&omega;&#770;</span><sub>k</sub> &middot; <span class='sym'>&omega;&#770;</span><sub>max</sub> )</span><span class="eqcap">Sign-aligned, magnitude-weighted direction average. This is the degenerate single-vector case of the classical attitude-from-vector-observations problem; it is used here as one component of the degree-of-freedom decomposition, not as a new axis-alignment algorithm.</span></div>
+<div class="eq"><span class="eqtag">(A2.3)</span><span class="eqbody">L<sub>j</sub> = Rodrigues( <strong>a</strong><sub>j</sub> &rarr; <strong>e</strong><sub>z</sub> ), &nbsp;&nbsp; (<span class='sym'>&phi;</span><sub>j</sub>, <span class='sym'>&theta;</span><sub>j</sub>) = ZYX<sub>1,2</sub>( L<sub>j</sub> )</span><span class="eqcap">The levelled twist <span class='sym'>&#7797;</span> = L<sub>j</sub><span class='sym'>&xi;</span><sub>j</sub> is the common two-dimensional input consumed by A4 and B2.</span></div>
+<h2 id="why-relative"><span class="secno">3</span> Why the reported roll and pitch are relative</h2>
+<p>The recovered axis is the normal of whatever plane the platform actually travelled on, not of an ideal horizontal plane. Road cross-slope, grade and static suspension attitude all enter every sensor's estimate identically, because all sensors ride the same body.</p>
+<p>That shared component is exactly what reference-relative composition removes. Comparing sensor j against reference r through rotation-matrix composition cancels the common plane term to first order and leaves the genuine difference in mounting tilt, which is the quantity a calibration ground truth can be compared against.</p>
+<div class="note warn"><span class="notelabel">Caution</span><div>Persistent non-planarity &mdash; sustained banking, heave or strong suspension motion &mdash; breaks the single-plane premise inside a segment rather than adding a constant offset. It is a model boundary, not a noise term, and it biases the estimate.</div></div>
+<h2 id="out"><span class="secno">4</span> Outputs and diagnostics</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>roll_deg</code>, <code>pitch_deg</code></td><td>Estimated mounting tilt of this sensor</td></tr><tr><td><code>axis_vector</code></td><td>Unit axis <strong>a</strong><sub>j</sub> in the raw sensor frame</td></tr><tr><td><code>level_matrix</code></td><td>Rotation taking <strong>a</strong><sub>j</sub> to +z</td></tr><tr><td>viz arrays</td><td>Per-segment rotation vectors and the fitted representative axis, for overlay plots</td></tr></tbody></table></div></figure>
+<ul><li>Fewer than 20 gated samples &rarr; the channel is dropped at stage <code>axis</code>; nothing downstream runs for it.</li><li>Planar streams that carry no wx/wy at all bypass this module entirely with roll = pitch = 0 and an identity levelling matrix &mdash; see the caveat in <a href='gauge.html'>A3</a>.</li><li>Diagnostic plots: angular-velocity samples on the unit sphere with the fitted axis; before/after sign alignment; levelled versus raw angular-velocity trajectories.</li></ul>
+<section class="seealso"><h2>See also</h2><ul><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a> &mdash; resolving the 180&deg; branch</li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a> &mdash; consumes the levelled twist</li><li><a href="observability.html">Observability decomposition</a> &mdash; where roll and pitch sit among the six degrees of freedom</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

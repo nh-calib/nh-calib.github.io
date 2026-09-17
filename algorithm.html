@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A detailed, visual explanation of the NH-Calib algorithm.">
+  <title>How NH-Calib Works — Algorithm Visual Guide</title>
+  <style>
+    :root{--bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#edf5fb;--muted:#a9bfd2;--line:#294861;--blue:#68b9f5;--orange:#f3a45a;--green:#64d6aa;--purple:#bc9cff;--max:1180px;color-scheme:dark}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 85% 5%,#173753 0,transparent 33%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}a{color:inherit}.wrap{width:min(var(--max),calc(100% - 40px));margin:auto}.top{position:sticky;top:0;z-index:10;background:rgba(7,17,31,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.nav{display:flex;align-items:center;justify-content:space-between;height:64px}.brand{font-weight:800;letter-spacing:-.03em;text-decoration:none}.navlinks{display:flex;gap:22px;color:var(--muted);font-size:14px}.navlinks a{text-decoration:none}.navlinks a:hover{color:var(--text)}
+    .hero{padding:92px 0 56px}.eyebrow{color:var(--blue);text-transform:uppercase;letter-spacing:.16em;font-size:13px;font-weight:800}.hero h1{max-width:900px;margin:14px 0 22px;font-size:clamp(42px,7vw,78px);line-height:1.02;letter-spacing:-.055em}.lead{max-width:820px;color:var(--muted);font-size:clamp(18px,2.1vw,23px)}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:30px}.chip{padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:#0b1928;color:#c5d5e2;font-size:13px}
+    .overview{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.28)}.caption{margin:13px 4px 0;color:var(--muted);font-size:14px}.section{padding:82px 0;border-top:1px solid rgba(41,72,97,.55)}.section h2{margin:10px 0 16px;font-size:clamp(30px,4vw,49px);line-height:1.08;letter-spacing:-.04em}.sectionlead{max-width:800px;color:var(--muted);font-size:18px}.stagebar{display:flex;align-items:center;gap:12px;color:var(--blue);font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase}.stagebar.orange{color:var(--orange)}.stagebar:before{content:"";width:34px;height:2px;background:currentColor}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;margin-top:34px}.card{grid-column:span 6;padding:26px;border:1px solid var(--line);border-radius:19px;background:linear-gradient(145deg,rgba(19,43,66,.92),rgba(9,25,40,.96));box-shadow:0 16px 40px rgba(0,0,0,.14)}.card.full{grid-column:1/-1}.card.third{grid-column:span 4}.card h3{margin:0 0 9px;font-size:21px;letter-spacing:-.02em}.card p{margin:0;color:var(--muted)}.kicker{display:block;margin-bottom:12px;color:var(--blue);font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.orange .kicker,.kicker.orange{color:var(--orange)}.green{color:var(--green)}
+    .eq{overflow-x:auto;margin:18px 0 0;padding:18px 20px;border-left:3px solid var(--blue);background:#071522;border-radius:5px 12px 12px 5px;font:18px/1.6 "Cambria Math","STIX Two Math",serif;color:#f4f9fd;white-space:nowrap}.eq.orange{border-color:var(--orange)}.eq.greenline{border-color:var(--green)}.note{margin-top:16px;padding:14px 16px;border:1px solid #31516a;border-radius:12px;background:rgba(8,23,37,.65);color:#c8d7e4;font-size:14px}.note strong{color:var(--text)}
+    .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:30px}.flowitem{position:relative;min-height:150px;padding:19px;border:1px solid var(--line);border-radius:16px;background:#0d1c2c}.flowitem:not(:last-child):after{content:"→";position:absolute;right:-18px;top:58px;z-index:2;color:#7690a5;font-size:25px}.stepno{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#1c6195;color:#fff;font-size:13px;font-weight:800}.flowitem.orange .stepno{background:#a85c21}.flowitem h3{margin:14px 0 5px;font-size:17px}.flowitem p{margin:0;color:var(--muted);font-size:14px}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;margin-top:34px}.visual{padding:18px;border:1px solid var(--line);border-radius:18px;background:#081725}.visual svg{display:block;width:100%;height:auto}.bullets{padding:0;margin:18px 0 0;list-style:none}.bullets li{position:relative;margin:10px 0;padding-left:20px;color:var(--muted)}.bullets li:before{content:"";position:absolute;left:0;top:.72em;width:7px;height:7px;border-radius:50%;background:var(--blue)}.bullets.orange li:before{background:var(--orange)}
+    table{width:100%;border-collapse:collapse;margin-top:26px;font-size:15px}th,td{padding:15px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{color:#d8e8f4;font-size:12px;letter-spacing:.08em;text-transform:uppercase}td{color:var(--muted)}td strong{color:var(--text)}
+    .warning{border-color:#594b2f;background:linear-gradient(145deg,#241d12,#101a25)}.warning .kicker{color:#f2c16c}.footer{padding:55px 0 80px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}.download{display:inline-flex;margin-top:20px;padding:11px 15px;border:1px solid #427296;border-radius:10px;text-decoration:none;background:#102c44;color:#eaf6ff;font-weight:700}.download:hover{background:#173c59}
+    @media(max-width:850px){.navlinks{display:none}.hero{padding-top:64px}.card,.card.third{grid-column:1/-1}.flow{grid-template-columns:1fr 1fr}.flowitem:nth-child(2):after{display:none}.split{grid-template-columns:1fr}.section{padding:60px 0}}
+    @media(max-width:560px){.wrap{width:min(100% - 24px,var(--max))}.flow{grid-template-columns:1fr}.flowitem:after{display:none}.card{padding:20px}.eq{font-size:15px}.hero h1{font-size:42px}.overview{border-radius:12px}}
+  </style>
+</head>
+<body>
+  <header class="top"><nav class="nav wrap"><a class="brand" href="index.html">NH-Calib</a><div class="navlinks"><a href="wiki/index.html">Wiki</a><a href="#pipeline">Pipeline</a><a href="#stage1">Stage 1</a><a href="#stage2">Stage 2</a><a href="#output">Output</a></div></nav></header>
+  <main>
+    <section class="hero wrap">
+      <div class="eyebrow">Algorithm visual guide</div>
+      <h1>Recover sensor extrinsics from how the vehicle moves.</h1>
+      <p class="lead">NH-Calib turns each sensor's own odometry into a reference-relative five-degree-of-freedom calibration. It deliberately separates what one sensor can observe alone from what requires motion association between sensors.</p>
+      <div class="chips"><span class="chip">No shared field of view</span><span class="chip">No map</span><span class="chip">No calibration target</span><span class="chip">Asynchronous sensors</span><span class="chip">LiDAR or radar odometry</span></div>
+    </section>
+
+    <section class="wrap" aria-labelledby="overview-title">
+      <img class="overview" src="assets/nhcalib_algorithm_overview.svg" alt="Overview of the eight-step NH-Calib calibration algorithm">
+      <p class="caption" id="overview-title">Read left to right. Stage 1 estimates roll, pitch, x, and yaw independently for every sensor; Stage 2 estimates the remaining relative y through pairwise segment integration and graph consistency.</p>
+    </section>
+
+    <section class="section" id="pipeline"><div class="wrap">
+      <div class="stagebar">Core idea</div><h2>Split the calibration by observability.</h2>
+      <p class="sectionlead">Planar wheeled motion does not expose every extrinsic component in the same way. NH-Calib therefore avoids a single monolithic solve and assigns each component to the motion constraint that actually observes it.</p>
+      <div class="grid">
+        <article class="card third"><span class="kicker">Single-sensor rotation</span><h3>Roll &amp; pitch</h3><p>The dominant angular-velocity axis is the motion-plane normal expressed in the sensor frame.</p></article>
+        <article class="card third"><span class="kicker">Single-sensor NHC</span><h3>X &amp; yaw</h3><p>The lateral-velocity constraint exposes yaw misalignment and the longitudinal lever arm.</p></article>
+        <article class="card third orange"><span class="kicker orange">Cross-sensor turns</span><h3>Relative y</h3><p>Different arc lengths over the same turn expose the relative lateral lever arm.</p></article>
+        <article class="card full"><span class="kicker">Important boundary</span><h3>Why z is absent</h3><p>Locally planar vehicle motion does not provide the vertical excitation needed to observe vertical translation. The output is therefore a five-degree-of-freedom relative extrinsic: x, y, yaw, roll, and pitch.</p></article>
+      </div>
+      <table aria-label="NH-Calib observability map"><thead><tr><th>Quantity</th><th>Primary evidence</th><th>Needs another sensor?</th><th>Clock-offset sensitivity</th></tr></thead><tbody>
+        <tr><td><strong>Roll, pitch</strong></td><td>Sensor-local angular-velocity axis</td><td>No</td><td>None across sensors</td></tr>
+        <tr><td><strong>X, yaw</strong></td><td>Sensor-local leveled planar twist under NHC</td><td>No</td><td>None across sensors</td></tr>
+        <tr><td><strong>Relative y</strong></td><td>Integrated displacement difference over a shared turn</td><td>Yes</td><td>Reduced by common-window integration</td></tr>
+        <tr><td><strong>Z</strong></td><td>Not excited by the planar-motion model</td><td>—</td><td>Unobservable</td></tr>
+      </tbody></table>
+    </div></section>
+
+    <section class="section" id="inputs"><div class="wrap">
+      <div class="stagebar">Input</div><h2>Start with odometry, not raw cross-sensor registration.</h2>
+      <p class="sectionlead">For sensor j, the input is a time-ordered SE(3) pose sequence on that sensor's own clock. Pose increments are converted into sensor-frame angular velocity ω̃<sub>j</sub>(t) and linear velocity ṽ<sub>j</sub>(t).</p>
+      <div class="grid">
+        <article class="card"><span class="kicker">Required</span><h3>Per-sensor motion</h3><p>Each LiDAR or radar may use its own odometry backend. Sensors do not need overlapping fields of view because their point clouds are never registered to one another.</p></article>
+        <article class="card"><span class="kicker">Used by the slip-aware model</span><h3>Vehicle forward speed</h3><p>The reported experiments interpolate chassis, INS, or CAN forward speed to sensor timestamps. Setting the slip coefficient c to zero recovers the classical non-holonomic constraint.</p></article>
+      </div>
+    </div></section>
+
+    <section class="section" id="stage1"><div class="wrap">
+      <div class="stagebar">Stage 1 · per sensor</div><h2>Estimate four components without inter-sensor synchronization.</h2>
+      <div class="flow">
+        <div class="flowitem"><span class="stepno">1</span><h3>Detect turns</h3><p>Find sufficiently strong, direction-consistent rotational segments.</p></div>
+        <div class="flowitem"><span class="stepno">2</span><h3>Align plane</h3><p>Use the representative rotation axis to recover roll and pitch.</p></div>
+        <div class="flowitem"><span class="stepno">3</span><h3>Solve NHC residual</h3><p>Robustly estimate yaw, x, and shared slip coefficient c.</p></div>
+        <div class="flowitem"><span class="stepno">4</span><h3>Relativize</h3><p>Compose every estimate with the inverse reference-sensor pose.</p></div>
+      </div>
+
+      <div class="split">
+        <div>
+          <span class="kicker">Step 1</span><h3>Turn-segment extraction</h3>
+          <p class="sectionlead">Yaw rate supplies both the segment boundaries and the excitation test. Weak noise crossings are removed before any calibration residual is formed.</p>
+          <ul class="bullets"><li>Enter and remain in a candidate while |ω<sub>z</sub>| ≥ 5 deg/s with a consistent direction.</li><li>Retain it only when peak |ω<sub>z</sub>| ≥ 15 deg/s and accumulated |Δθ| ≥ 30 deg.</li><li>Merge same-direction candidates separated by a short straight gap.</li></ul>
+        </div>
+        <div class="visual">
+          <svg viewBox="0 0 560 270" role="img" aria-label="Turn-segment extraction waveform">
+            <rect width="560" height="270" rx="14" fill="#071522"/><g stroke="#28445d" stroke-width="1"><line x1="55" y1="45" x2="55" y2="225"/><line x1="55" y1="135" x2="520" y2="135"/><line x1="55" y1="93" x2="520" y2="93" stroke-dasharray="7 6"/><line x1="55" y1="177" x2="520" y2="177" stroke-dasharray="7 6"/></g>
+            <path d="M55 135C95 134 102 120 126 116S158 41 206 55s49 94 95 83 45-71 86-50 49 47 78 47h55" fill="none" stroke="#6abcf7" stroke-width="4"/>
+            <path d="M126 219V87M454 219V87" stroke="#f0a35a" stroke-width="3" stroke-dasharray="7 6"/><circle cx="184" cy="51" r="7" fill="#f3a45a"/>
+            <g fill="#a9bfd2" font-family="Segoe UI,Arial" font-size="13"><text x="8" y="97">+5°/s</text><text x="12" y="181">−5°/s</text><text x="112" y="245">segment start</text><text x="414" y="245">segment end</text><text x="195" y="35">peak test</text></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid">
+        <article class="card"><span class="kicker">Step 2 · roll and pitch</span><h3>The rotation axis is the plane normal.</h3><p>Under locally planar motion, valid angular-velocity vectors are collinear. NH-Calib sign-aligns them, computes a magnitude-weighted representative axis, selects the 180-degree branch consistent with a coarse mounting orientation, and uses Rodrigues rotation to align it with the vertical axis.</p><div class="eq">ω̃<sub>j</sub><sup>S</sup>(t) ≃ ω(t) a<sub>j</sub>, &nbsp; a<sub>j</sub> = R<sub>j</sub><sup>T</sup> e<sub>z</sub></div><div class="note"><strong>Why side sensors still work:</strong> this step uses each sensor's own angular-velocity trajectory. It does not need a common field of view with the reference sensor.</div></article>
+        <article class="card"><span class="kicker">Step 3 · x, yaw, slip</span><h3>Fit the lateral non-holonomic residual.</h3><p>After motion-plane alignment, yaw ψ<sub>j</sub> rotates the sensor twist into vehicle axes. The lateral sensor velocity contains the x lever-arm term induced by yaw rotation. A shared coefficient c absorbs speed-dependent tire slip.</p><div class="eq">r<sub>j,k</sub> = sinψ<sub>j</sub> ṽ<sub>x</sub> + cosψ<sub>j</sub> ṽ<sub>y</sub> − ω<sub>j,k</sub>p<sub>x,j</sub> + v<sub>c</sub>tan(c v<sub>c</sub>ω<sub>j,k</sub>)</div><div class="note"><strong>Solver:</strong> Huber-weighted IRLS Gauss–Newton, initialized at ψ = 0, p<sub>x</sub> = 0, c = 0, with bounded updates and at most 60 iterations.</div></article>
+        <article class="card full"><span class="kicker">Step 4 · reference relativization</span><h3>Compose transforms to cancel common platform bias.</h3><p>The independently estimated per-sensor poses are converted to a reference-relative form. Rotations are composed as matrices instead of subtracting Euler angles.</p><div class="eq greenline">T̂<sub>rj</sub> = (T̂<sub>Vr</sub>)<sup>−1</sup>T̂<sub>Vj</sub>, &nbsp;&nbsp; R̂<sub>rj</sub> = R̂<sub>Vr</sub><sup>T</sup>R̂<sub>Vj</sub></div><p class="note">If q̂<sub>j</sub> = q<sub>j</sub> + b<sub>common</sub> + ε<sub>j</sub>, reference-relative conversion removes b<sub>common</sub> to first order and leaves ε<sub>j</sub> − ε<sub>r</sub>.</p></article>
+      </div>
+    </div></section>
+
+    <section class="section" id="stage2"><div class="wrap">
+      <div class="stagebar orange">Stage 2 · across sensors</div><h2>Use complete turns to recover relative y robustly.</h2>
+      <p class="sectionlead">A single sensor cannot separate its forward velocity from the common platform speed. Relative y is therefore the only component that requires two sensors—but it is estimated over whole turning segments, not by fragile frame-wise subtraction.</p>
+      <div class="flow">
+        <div class="flowitem orange"><span class="stepno">5</span><h3>Align clocks</h3><p>Cross-correlate yaw-rate signals and associate corresponding turns.</p></div>
+        <div class="flowitem orange"><span class="stepno">6</span><h3>Match windows</h3><p>Intersect segment intervals and interpolate exact common boundaries.</p></div>
+        <div class="flowitem orange"><span class="stepno">7</span><h3>Regress each pair</h3><p>Fit the arc-length difference against accumulated heading.</p></div>
+        <div class="flowitem orange"><span class="stepno">8</span><h3>Integrate graph</h3><p>Reconcile all pairwise edges into one consistent sensor layout.</p></div>
+      </div>
+
+      <div class="grid">
+        <article class="card"><span class="kicker orange">Steps 5–6 · common window</span><h3>Confine timing error to two boundaries.</h3><p>For each associated turn, the common interval starts at the latest sensor start time and ends at the earliest sensor end time. Motion is linearly interpolated at both boundaries. Cosine similarity and NRMSE reject incompatible sensor–segment combinations.</p><div class="eq orange">t<sub>0,k</sub> = max<sub>j</sub> t<sub>0,j,k</sub>, &nbsp;&nbsp; t<sub>1,k</sub> = min<sub>j</sub> t<sub>1,j,k</sub></div></article>
+        <article class="card"><span class="kicker orange">Step 7 · sum form</span><h3>Turn arc-length difference into relative y.</h3><p>Each sensor integrates forward velocity over the identical window. Sensors with different lateral offsets travel concentric arcs, so their displacement difference is proportional to the same accumulated heading.</p><div class="eq orange">I<sub>j,k</sub> = ∫<sub>t0,k</sub><sup>t1,k</sup>v<sub>j,x</sub>(t)dt, &nbsp; W<sub>k</sub> = ∫ω(t)dt<br>ΔI<sub>k</sub> = −Δp<sub>y,ij</sub>W<sub>k</sub></div></article>
+      </div>
+
+      <div class="split">
+        <div class="visual">
+          <svg viewBox="0 0 560 360" role="img" aria-label="Sum-form geometry and pairwise regression">
+            <rect width="560" height="360" rx="14" fill="#071522"/><path d="M82 307A234 234 0 0 1 426 80" fill="none" stroke="#68b9f5" stroke-width="5" stroke-dasharray="10 8"/><path d="M112 320A203 203 0 0 1 412 124" fill="none" stroke="#f3a45a" stroke-width="5" stroke-dasharray="10 8"/><line x1="80" y1="307" x2="112" y2="320" stroke="#bc9cff" stroke-width="4"/><path d="M85 270A190 190 0 0 1 311 100" fill="none" stroke="#6dd6ad" stroke-width="3" marker-end="url(#m)"/>
+            <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0l10 5-10 5z" fill="#6dd6ad"/></marker></defs>
+            <g fill="#d5e4ef" font-family="Segoe UI,Arial" font-size="14"><text x="337" y="59">Sensor A: I<tspan baseline-shift="sub" font-size="10">A</tspan></text><text x="346" y="147">Sensor B: I<tspan baseline-shift="sub" font-size="10">B</tspan></text><text x="80" y="343">Δp<tspan baseline-shift="sub" font-size="10">y,AB</tspan></text><text x="204" y="120">W<tspan baseline-shift="sub" font-size="10">k</tspan></text></g>
+          </svg>
+        </div>
+        <div><span class="kicker orange">Why integration matters</span><h3>Sample-wise differencing exposes every sample to clock error.</h3><ul class="bullets orange"><li>Frame-wise Δv<sub>x</sub> requires exact sample correspondence throughout the turn.</li><li>Sum-form integration requires agreement only at the common start and end boundaries.</li><li>Larger |W<sub>k</sub>| segments carry more information about the regression slope.</li></ul><div class="note"><strong>Sign convention:</strong> with ΔI = I<sub>i</sub> − I<sub>j</sub> and Δp<sub>y,ij</sub> = p<sub>y,i</sub> − p<sub>y,j</sub>, the signed relation is ΔI = −Δp<sub>y,ij</sub>W.</div></div>
+      </div>
+
+      <div class="grid">
+        <article class="card full"><span class="kicker orange">Step 8 · graph integration</span><h3>One global layout replaces many inconsistent pairwise answers.</h3><p>Each sensor is a node. Pairwise regression supplies an edge measurement d<sub>ij</sub> and confidence w<sub>ij</sub>. Fixing the reference at y<sub>r</sub> = 0 removes the gauge freedom; robust optimization suppresses unstable edges and cycle inconsistency.</p><div class="eq orange">y* = arg min<sub>{y<sub>j</sub>}, y<sub>r</sub>=0</sub> Σ<sub>(i,j)∈E</sub> ρ( w<sub>ij</sub> [ (y<sub>i</sub> − y<sub>j</sub>) − d<sub>ij</sub> ] )</div><div class="note"><strong>Optional metric anchor:</strong> adding CAN wheel odometry as a virtual sensor at the rear-axle center, p<sub>y</sub> = 0, converts the relative graph into vehicle-frame absolute y estimates.</div></article>
+      </div>
+    </div></section>
+
+    <section class="section" id="output"><div class="wrap">
+      <div class="stagebar">Final output</div><h2>A reference-relative, graph-consistent 5-DoF calibration.</h2>
+      <p class="sectionlead">Stage 1 contributes x, yaw, roll, and pitch. Stage 2 contributes graph-integrated relative y. Together they form T̂<sub>rj</sub> for every target sensor j with respect to the selected reference sensor r.</p>
+      <div class="grid">
+        <article class="card third"><span class="kicker">Works best when</span><h3>Motion is informative</h3><p>The sequence contains repeated turns with sufficient angular rate and heading change.</p></article>
+        <article class="card third warning"><span class="kicker">Degeneracy</span><h3>Straight-only driving</h3><p>Weak rotation makes the motion-plane axis, lever arms, and sum-form slope poorly conditioned.</p></article>
+        <article class="card third warning"><span class="kicker">Model boundary</span><h3>Strong non-planarity</h3><p>Persistent banking, heave, or suspension motion violates the locally planar approximation and can bias the estimate.</p></article>
+      </div>
+      <a class="download" href="assets/nhcalib_algorithm_overview.svg" download>Download overview SVG</a>
+    </div></section>
+  </main>
+  <footer class="footer"><div class="wrap">NH-Calib algorithm guide · Anonymous project material · Equations and thresholds synchronized with the submitted manuscript.</div></footer>
+</body>
+</html>

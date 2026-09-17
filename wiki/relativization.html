@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Converting per-sensor absolute estimates into reference-relative extrinsics.">
+<title>A5 &middot; Reference relativization &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html" class="on">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Stage 1 &rsaquo; A5</div>
+<h1>A5 &middot; Reference relativization</h1>
+<aside class="infobox"><div class="ibtitle">A5 &middot; Reference relativization</div><table><tr><th>Stage</th><td>1 &mdash; final step</td></tr><tr><th>Input</th><td>Per-sensor <span class='sym'>&phi;</span>, <span class='sym'>&theta;</span>, <span class='sym'>&psi;</span>, p<sub>x</sub></td></tr><tr><th>Output</th><td>Reference-relative X, Yaw, Roll, Pitch</td></tr><tr><th>Operation</th><td>Transform composition, not Euler-angle subtraction</td></tr><tr><th>Cancels</th><td>Platform-common bias b<sub>common</sub> to first order</td></tr><tr><th>Gauge</th><td>Reference sensor is the frame origin; y<sub>r</sub> = 0 in Stage 2</td></tr></table></aside>
+<p class="tagline">All sensors ride the same body over the same segments, so they share the same model error. Composing every estimate against one reference sensor cancels that shared error to first order &mdash; and defines the quantity that ground truth can actually score.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#why">Why relativize</a></li><li><span class="tocno">2</span><a href="#how">How it is computed</a></li><li><span class="tocno">3</span><a href="#limits">What relativization does not fix</a></li></ul></div>
+<h2 id="why"><span class="secno">1</span> Why relativize</h2>
+<p>Each Stage 1 estimate is stated with respect to a platform frame that the data defines only implicitly: the motion plane the vehicle happened to travel on, the speed signal the dataset happened to publish, the slip coefficient that absorbed whatever bias the odometry front end carried. Those are shared inputs, and their errors land on every sensor the same way.</p>
+<div class="eq"><span class="eqtag">(A5.1)</span><span class="eqbody">q&#770;<sub>j</sub> = q<sub>j</sub> + b<sub>common</sub> + <span class='sym'>&epsilon;</span><sub>j</sub> &nbsp;&nbsp;&rArr;&nbsp;&nbsp; q&#770;<sub>j</sub> &minus; q&#770;<sub>r</sub> = (q<sub>j</sub> &minus; q<sub>r</sub>) + (<span class='sym'>&epsilon;</span><sub>j</sub> &minus; <span class='sym'>&epsilon;</span><sub>r</sub>)</span><span class="eqcap">The shared term disappears; only the genuinely per-sensor part survives. This is the formal reason relative accuracy is consistently better than absolute accuracy in the reported results.</span></div>
+<div class="note key"><span class="notelabel">Key point</span><div>This applies to <em>all</em> estimated components, not only lateral offset. Motions that violate the platform model &mdash; a road with cross-slope, a speed signal referenced to the wrong point, suspension attitude &mdash; act on every sensor at once and are therefore removed by the same mechanism. Absolute values can be slightly off while relative values stay accurate.</div></div>
+<h2 id="how"><span class="secno">2</span> How it is computed</h2>
+<div class="eq"><span class="eqtag">(A5.2)</span><span class="eqbody">T&#770;<sub>rj</sub> = ( T&#770;<sub>Vr</sub> )<sup>&minus;1</sup> T&#770;<sub>Vj</sub>, &nbsp;&nbsp;&nbsp; R&#770;<sub>rj</sub> = R&#770;<sub>Vr</sub><sup>&#8868;</sup> R&#770;<sub>Vj</sub></span><span class="eqcap">Rotations are composed as matrices. Subtracting Euler angles is not equivalent and introduces order-dependent error once two angles are non-small.</span></div>
+<div class="steps"><div class="step"><div class="stepno">1</div><div class="stepbody"><h4>Choose the reference</h4><p>One channel is designated the reference. It is also the gauge anchor used by A3 and the fixed node of the Stage 2 graph, so that all three gauge choices coincide.</p></div></div><div class="step"><div class="stepno">2</div><div class="stepbody"><h4>Assemble per-sensor poses</h4><p>Roll and pitch from A2, yaw and longitudinal offset from A4 form each sensor's estimated pose in the implicit platform frame. Lateral offset is still unknown at this point &mdash; it is Stage 2's output.</p></div></div><div class="step"><div class="stepno">3</div><div class="stepbody"><h4>Compose</h4><p>Apply (A5.2) to every sensor. Rotational parts are extracted from the composed rotation matrix; the longitudinal component is differenced in the reference frame.</p></div></div><div class="step"><div class="stepno">4</div><div class="stepbody"><h4>Report</h4><p>The output of Stage 1 is reference-relative X, Yaw, Roll and Pitch. Lateral offset joins later to complete the five-degree-of-freedom result.</p></div></div></div>
+<h2 id="limits"><span class="secno">3</span> What relativization does not fix</h2>
+<ul><li>Errors that differ between sensors &mdash; a channel whose odometry tracking degraded, or one with a much weaker turn sample &mdash; survive by construction. They are the residual <span class='sym'>&epsilon;</span><sub>j</sub> &minus; <span class='sym'>&epsilon;</span><sub>r</sub>.</li><li>A poor reference channel contaminates every pair, since its own error enters all of them with the same sign. Reference selection is a real design decision, not a labelling convention.</li><li>The cancellation is first order. A bias large enough for second-order terms to matter is not removed cleanly.</li><li>Vertical offset is not recovered by relativization. It is unobservable under planar motion for structural reasons, discussed in the <a href='observability.html'>observability</a> page.</li></ul>
+<section class="seealso"><h2>See also</h2><ul><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a> &mdash; produces the components being composed</li><li><a href="graph.html">B3 &middot; Graph integration</a> &mdash; applies the same reference as the fixed node</li><li><a href="observability.html">Observability decomposition</a> &mdash; why five degrees of freedom and not six</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

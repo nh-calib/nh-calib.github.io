@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Index of the NH-Calib algorithm wiki: per-sensor Stage 1 modules and cross-sensor Stage 2 modules.">
+<title>NH-Calib algorithm wiki &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html" class="on">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">NH-Calib &rsaquo; Algorithm wiki</div>
+<h1>NH-Calib algorithm wiki</h1>
+<aside class="infobox"><div class="ibtitle">NH-Calib algorithm wiki</div><table><tr><th>Problem</th><td>Extrinsic calibration of vehicle-mounted sensors without targets or shared field of view</td></tr><tr><th>Inputs</th><td>Per-sensor metric twist; optional platform forward speed</td></tr><tr><th>Outputs</th><td>Reference-relative Roll, Pitch, Yaw, X, Y</td></tr><tr><th>Not estimated</th><td>Vertical offset p<sub>z</sub> &mdash; unobservable under planar motion</td></tr><tr><th>Association</th><td>Required for one component only</td></tr><tr><th>Modules</th><td>Five in Stage 1, three in Stage 2</td></tr></table></aside>
+<p class="tagline">A page-per-algorithm reference for the NH-Calib extrinsic calibration pipeline. Each page states what one module assumes, what it consumes, the equation it solves, how it is solved, what can make it fail, and what it hands to the next module.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><a href="#start">Where to start</a></li><li><a href="#pipeline">Pipeline at a glance</a></li><li><a href="#modules">Module index</a></li><li><a href="#props">Properties worth knowing before reading further</a></li><li><a href="#caveats">Reading caveats</a></li></ul></div>
+<h2 id="start">Where to start</h2>
+<p>If you want the single idea behind the method, read <a href='observability.html'>Observability decomposition</a> first: it explains why the six-degree-of-freedom problem splits into four components each sensor can solve alone, one component that needs two sensors, and one that cannot be solved at all from planar motion. Every other page is a detailed account of one box in that split.</p>
+<div class="cards"><a class="card" href="observability.html"><span class="cardtag">Start here</span><h4>Observability decomposition</h4><p>Which degrees of freedom are observable, from what, and at what cost.</p></a><a class="card" href="m1-turn-segments.html"><span class="cardtag">Entry point</span><h4>A1 &middot; Turn-segment extraction</h4><p>The shared segment list every other module consumes.</p></a><a class="card" href="sum-form.html"><span class="cardtag">Core mechanism</span><h4>B2 &middot; Sum-form relative Y</h4><p>Why integrating over a turn removes the unknown vehicle speed.</p></a><a class="card" href="notation.html"><span class="cardtag">Reference</span><h4>Notation &amp; frames</h4><p>Symbols, frames, Euler order and sign conventions used across the wiki.</p></a></div>
+<h2 id="pipeline">Pipeline at a glance</h2>
+<figure class="wikifig"><img src="../assets/fig02_two_stage_pipeline_module_data_v6.png" alt="Two-stage NH-Calib pipeline with modules and data nodes"><figcaption>Stage 1 runs independently per sensor and needs no inter-sensor synchronization. Stage 2 is the only part that pairs sensors, and it produces exactly one component of the result.</figcaption></figure>
+<figure class="codewrap"><pre><code>per-sensor twist  (v, omega, timestamps)
+        |
+  [A1]  smoothing  -&gt;  shared turn segments -------------------------.
+        |                                                            |
+  [A2]  representative rotation axis  -&gt;  roll, pitch                |
+        |                                                            |
+  [A3]  sign gauge:  relative bits measured, global bit declared     |
+        |                                                            |
+        +--&gt; levelled 2-D twist ------------------.                  |
+        |                                         |                  |
+  [A4]  lateral NHC residual  -&gt;  yaw, X, shared c |                 |
+        |                                         |                  |
+  [A5]  compose against reference  -&gt;  relative roll, pitch, yaw, X  |
+                                                  |                  |
+                                                  v                  v
+                                        [B1] clock offset, association, common windows
+                                                  |
+                                        [B2] integrate over window  -&gt;  pairwise dY
+                                                  |
+                                        [B3] robust weighted graph  -&gt;  relative Y
+                                                  |
+                                   reference-relative 5-DoF calibration</code></pre><figcaption>Data flow in text form. Arrows carry data, not control.</figcaption></figure>
+<h2 id="modules">Module index</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>ID</th><th>Module</th><th>Consumes</th><th>Produces</th><th>Needs a second sensor?</th></tr></thead><tbody><tr><td><a href='m1-turn-segments.html'>A1</a></td><td>Turn-segment extraction</td><td>Raw twist</td><td>Smoothed twist, shared segments</td><td>No</td></tr><tr><td><a href='m2-roll-pitch.html'>A2</a></td><td>Motion-plane alignment</td><td>Angular velocity in turns</td><td>Roll, pitch, levelling rotation</td><td>No</td></tr><tr><td><a href='gauge.html'>A3</a></td><td>Rotation-sign gauge</td><td>Per-sensor axes</td><td>Sign bits, gauge declaration</td><td>Only for the relative bits</td></tr><tr><td><a href='m3-x-yaw.html'>A4</a></td><td>X, Yaw and slip</td><td>Levelled twist, platform speed</td><td>Yaw, longitudinal offset, shared c</td><td>No</td></tr><tr><td><a href='relativization.html'>A5</a></td><td>Reference relativization</td><td>Per-sensor poses</td><td>Relative roll, pitch, yaw, X</td><td>Reference channel only</td></tr><tr><td><a href='time-alignment.html'>B1</a></td><td>Alignment and windows</td><td>Segments, yaw-rate signals</td><td>Associated pairs, common windows</td><td>Yes</td></tr><tr><td><a href='sum-form.html'>B2</a></td><td>Sum-form relative Y</td><td>Common windows</td><td>Pairwise lateral difference</td><td>Yes</td></tr><tr><td><a href='graph.html'>B3</a></td><td>Graph integration</td><td>Pairwise measurements</td><td>Consistent relative Y</td><td>Yes</td></tr></tbody></table></div><figcaption>Five of the eight modules never look at a second sensor. That asymmetry is the method's central design property.</figcaption></figure>
+<h2 id="props">Properties worth knowing before reading further</h2>
+<ul><li><strong>No overlapping field of view is required.</strong> Sensors are never registered against each other; only their motion is compared.</li><li><strong>No targets, no infrastructure.</strong> The vehicle's own turning motion is the calibration signal.</li><li><strong>Modality-independent.</strong> Any front end that produces metric linear and angular velocity qualifies &mdash; LiDAR odometry, radar odometry, GNSS/INS, or wheel speed with an angular-rate source.</li><li><strong>One-way pipeline.</strong> A1 &rarr; A5 &rarr; B3 with no feedback loop; changing an early setting invalidates everything after it.</li><li><strong>Relative by construction.</strong> Results are stated against a reference sensor, which is also the gauge anchor and the fixed graph node.</li><li><strong>Scale is assumed known.</strong> Sensors without metric translation, such as a monocular camera, are outside the scope of the method as described here.</li></ul>
+<h2 id="caveats">Reading caveats</h2>
+<div class="note warn"><span class="notelabel">Caution</span><div>Numeric values on these pages are reference-implementation defaults for the reported configuration. Where the design note and the manuscript differ &mdash; for instance in solver initialisation &mdash; the page says so explicitly rather than silently picking one. Accuracy figures are stated with their sample basis; single-log numbers are not representative on their own.</div></div>
+<section class="seealso"><h2>See also</h2><ul><li><a href="../index.html">Project page</a> &mdash; abstract, figures and quantitative results</li><li><a href="../algorithm.html">Visual walkthrough</a> &mdash; the same pipeline as a single scrollable illustration</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

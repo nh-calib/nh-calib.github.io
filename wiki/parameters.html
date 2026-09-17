@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Complete list of NH-Calib parameters with defaults and purpose.">
+<title>Parameter reference &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html" class="on">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Reference</div>
+<h1>Parameter reference</h1>
+<aside class="infobox"><div class="ibtitle">Parameter reference</div><table><tr><th>Scope</th><td>Core pipeline only; odometry front-end settings are external</td></tr><tr><th>Granularity</th><td>Run-level &mdash; identical for every channel in a run</td></tr><tr><th>Refit rule</th><td>Changing any A1 value invalidates all later modules</td></tr><tr><th>Tuning sensitivity</th><td>Most gates are inert on the reported datasets</td></tr></table></aside>
+<p class="tagline">Every threshold, constant and solver setting in one place, grouped by the module that reads it. Values are the reference-implementation defaults; deviations used in a specific experiment are stated on the module page.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#a1">A1 &mdash; smoothing and turn detection</a></li><li><span class="tocno">2</span><a href="#a2">A2 / A3 &mdash; axis and gauge</a></li><li><span class="tocno">3</span><a href="#a4">A4 &mdash; X, yaw and slip</a></li><li><span class="tocno">4</span><a href="#b">B1&ndash;B3 &mdash; association, regression and fusion</a></li><li><span class="tocno">5</span><a href="#sens">Which parameters actually matter</a></li></ul></div>
+<h2 id="a1"><span class="secno">1</span> A1 &mdash; smoothing and turn detection</h2>
+<figure class="tablewrap num"><div class="tscroll"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>smoothing window</td><td>1.0&nbsp;s</td><td>Time constant; converted to an odd sample count per dataset</td></tr><tr><td>smoothing mode</td><td><code>pose-sg</code></td><td>Pose-domain polynomial smoothing; alternatives listed on the A1 page</td></tr><tr><td>polynomial order</td><td>2</td><td>Order used by the pose-domain fit</td></tr><tr><td>turn hold rate</td><td>5&nbsp;deg/s</td><td>Lower hysteresis threshold, segment boundaries</td></tr><tr><td>turn peak rate</td><td>15&nbsp;deg/s</td><td>Upper hysteresis threshold, candidate acceptance</td></tr><tr><td>turn heading minimum</td><td>30&nbsp;deg</td><td>Minimum |W<sub>k</sub>| for an accepted segment</td></tr><tr><td>speed minimum</td><td>1.0&nbsp;m/s</td><td>Minimum mean platform speed inside a segment</td></tr><tr><td>maximum internal gap</td><td>0.3&nbsp;s</td><td>Mandatory split; prevents mega-segments</td></tr><tr><td>turn rate mode</td><td><code>norm</code></td><td>&#8214;&omega;&#8214;&middot;sign(&omega;<sub>z</sub>); <code>wz</code> mode for planar streams</td></tr><tr><td>duration minimum</td><td>0.8&nbsp;s</td><td>Present in settings; not enforced as a separate gate in the reported configuration</td></tr><tr><td>excluded segment ids</td><td>empty</td><td>Manual or automatic exclusion mask applied after detection</td></tr></tbody></table></div></figure>
+<h2 id="a2"><span class="secno">2</span> A2 / A3 &mdash; axis and gauge</h2>
+<figure class="tablewrap num"><div class="tscroll"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>axis information minimum</td><td>15&nbsp;deg/s</td><td>Lower bound on &#8214;&omega;&#8214; for a sample to inform the axis</td></tr><tr><td>rate sanity maximum</td><td>60&nbsp;deg/s</td><td>Upper bound; above this a sample is treated as an odometry artefact</td></tr><tr><td>minimum axis samples</td><td>20</td><td>Below this the channel drops at stage <code>axis</code></td></tr><tr><td>axis trimming</td><td>disabled</td><td>Robust trimming is off by default; the sample gate already removes tails</td></tr><tr><td>gauge mode</td><td>joint &omega; alignment</td><td>Alternative: per-sensor scalar rule, kept only as a control</td></tr><tr><td>minimum absolute correlation</td><td>0.2</td><td>Below this the sign verdict is withheld and reported as assumed</td></tr><tr><td>bootstrap draws</td><td>0</td><td>Axis bootstrap disabled in the core; enables standard errors when positive</td></tr></tbody></table></div></figure>
+<h2 id="a4"><span class="secno">3</span> A4 &mdash; X, yaw and slip</h2>
+<figure class="tablewrap num"><div class="tscroll"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>excitation minimum</td><td>15&nbsp;deg/s</td><td>Minimum yaw rate for a sample to enter the fit</td></tr><tr><td>minimum planar samples</td><td>50</td><td>Below this the channel drops at stage <code>planar</code></td></tr><tr><td>yaw-rate source</td><td>platform channel</td><td>Sensor-own rate is the option that keeps X synchronization-free</td></tr><tr><td>slip coefficient initial</td><td>0 (manuscript) / 0.008 (design note)</td><td>Initialisation only; the fitted value is reported</td></tr><tr><td>fit slip</td><td>enabled</td><td>Disabling it forces the classical non-holonomic constraint</td></tr><tr><td>Huber constant</td><td>1.345</td><td>Robust loss parameter</td></tr><tr><td>residual scale floor</td><td>10<sup>&minus;3</sup>&nbsp;m/s</td><td>Prevents weight collapse on near-perfect fits</td></tr><tr><td>step caps</td><td>0.3&nbsp;rad, 1&nbsp;m, 0.004&nbsp;s&sup2;/m</td><td>Per-iteration update limits</td></tr><tr><td>maximum iterations</td><td>60</td><td>Convergence threshold 10<sup>&minus;11</sup> on the largest step</td></tr></tbody></table></div></figure>
+<h2 id="b"><span class="secno">4</span> B1&ndash;B3 &mdash; association, regression and fusion</h2>
+<figure class="tablewrap num"><div class="tscroll"><table><thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td>association rule</td><td>same sign, positive overlap</td><td>Candidate filter before greedy matching</td></tr><tr><td>matching order</td><td>overlap descending</td><td>Greedy one-to-one assignment</td></tr><tr><td>boundary handling</td><td>linear interpolation</td><td>Applied at both common-window ends</td></tr><tr><td>quality statistics</td><td>uncentred cosine, NRMSE</td><td>Joint verdict against the median waveform</td></tr><tr><td>alternation rounds</td><td>3</td><td>Clock offset and calibration refined alternately</td></tr><tr><td>segment weight exponent</td><td>0.5</td><td>Weight is |W<sub>k</sub>|<sup>&nbsp;p&minus;2</sup>, i.e. |W<sub>k</sub>|<sup>&minus;1.5</sup></td></tr><tr><td>minimum segments per pair</td><td>2</td><td>Design rank must also be at least two</td></tr><tr><td>graph loss</td><td>robust kernel</td><td>Suppresses unstable edges and cycle inconsistency</td></tr><tr><td>graph gauge</td><td>y<sub>r</sub> = 0</td><td>Reference node fixed; optional wheel-odometry node at p<sub>y</sub> = 0</td></tr></tbody></table></div></figure>
+<h2 id="sens"><span class="secno">5</span> Which parameters actually matter</h2>
+<ul><li><strong>Time handling dominates.</strong> Treating a variable frame interval as a fixed nominal rate introduces a systematic error far larger than any threshold choice on the affected dataset.</li><li><strong>Quality gates are near-inert.</strong> Over a wide range the accepted segment set does not change at all; tightening them enough to reject segments makes results worse, because information is lost.</li><li><strong>Voxel and front-end settings live outside this table</strong> but change the fitted slip coefficient, including its sign &mdash; another reason c is not interpreted physically.</li><li><strong>Number of valid turns is the real lever.</strong> Pooling additional logs of the same platform reduced the reported lateral error more than any parameter change tested.</li></ul>
+<section class="seealso"><h2>See also</h2><ul><li><a href="failure-modes.html">Gates &amp; failure modes</a> &mdash; what happens when a gate is not met</li><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a> &mdash; where most of these thresholds are applied</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Robust weighted least-squares fusion of pairwise relative-Y measurements.">
+<title>B3 &middot; Graph integration &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html" class="on">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Stage 2 &rsaquo; B3</div>
+<h1>B3 &middot; Graph integration</h1>
+<aside class="infobox"><div class="ibtitle">B3 &middot; Graph integration</div><table><tr><th>Stage</th><td>2 &mdash; final fusion</td></tr><tr><th>Input</th><td>Pairwise d<sub>ij</sub> and confidence w<sub>ij</sub> from B2</td></tr><tr><th>Output</th><td>One lateral offset per sensor, relative to the reference</td></tr><tr><th>Structure</th><td>Nodes = sensors, edges = pairwise measurements</td></tr><tr><th>Gauge</th><td>y<sub>r</sub> = 0 at the reference sensor</td></tr><tr><th>Scope</th><td>Lateral offset only &mdash; the other four components are single-valued</td></tr></table></aside>
+<p class="tagline">Pairwise answers disagree around a cycle. Treating sensors as nodes and pairwise lateral offsets as weighted edges turns many inconsistent differences into one consistent layout with a single fixed reference.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#why">Why only this component needs fusion</a></li><li><span class="tocno">2</span><a href="#form">Formulation</a></li><li><span class="tocno">3</span><a href="#absolute">Optional metric anchor</a></li><li><span class="tocno">4</span><a href="#out">Final output</a></li></ul></div>
+<h2 id="why"><span class="secno">1</span> Why only this component needs fusion</h2>
+<p>Roll, pitch, yaw and longitudinal offset each come out of Stage 1 as one number per sensor. There is nothing to reconcile: no second estimate of the same quantity exists, so no optimization is needed for them.</p>
+<p>Lateral offset is different. B2 produces one measurement per <em>pair</em>, and with N sensors there are up to N(N&minus;1)/2 of them for only N&minus;1 free values. The system is overdetermined, and the redundancy shows up as cycle inconsistency: going i &rarr; j &rarr; k &rarr; i does not return exactly zero.</p>
+<div class="note key"><span class="notelabel">Key point</span><div>The graph is therefore not a heavyweight back end. It is the minimal machinery needed to turn redundant scalar differences into one consistent set of values &mdash; a robust weighted least-squares problem in N&minus;1 unknowns.</div></div>
+<h2 id="form"><span class="secno">2</span> Formulation</h2>
+<div class="eq"><span class="eqtag">(B3.1)</span><span class="eqbody"><strong>y</strong>* = arg min<sub>{y<sub>j</sub>}, y<sub>r</sub>=0</sub> &nbsp; &sum;<sub>(i,j) &isin; E</sub> <span class='sym'>&rho;</span>( w<sub>ij</sub> [ (y<sub>i</sub> &minus; y<sub>j</sub>) &minus; d<sub>ij</sub> ] )</span><span class="eqcap"><span class='sym'>&rho;</span> is a robust loss; w<sub>ij</sub> is the confidence of the pairwise regression that produced d<sub>ij</sub>; fixing the reference node removes the remaining gauge freedom.</span></div>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Element</th><th>Meaning</th><th>Source</th></tr></thead><tbody><tr><td>Node y<sub>j</sub></td><td>Lateral offset of sensor j relative to the reference</td><td>Unknown being solved</td></tr><tr><td>Edge d<sub>ij</sub></td><td>Measured lateral difference of the pair</td><td>B2 regression slope</td></tr><tr><td>Weight w<sub>ij</sub></td><td>Confidence of that pair</td><td>Regression standard error and segment count</td></tr><tr><td>Loss <span class='sym'>&rho;</span></td><td>Robust kernel suppressing outlier edges</td><td>Pairs with few or poorly conditioned segments</td></tr><tr><td>Constraint y<sub>r</sub> = 0</td><td>Gauge fixing</td><td>Same reference sensor as A5 and A3</td></tr></tbody></table></div></figure>
+<div class="note gauge"><span class="notelabel">Convention</span><div>Without the constraint the cost is invariant to adding a constant to every node: the problem determines differences, not absolute positions. Fixing the reference is the cleanest way to remove that freedom, and it keeps the output consistent with the reference-relative convention used everywhere else.</div></div>
+<h2 id="absolute"><span class="secno">3</span> Optional metric anchor</h2>
+<p>The graph can be closed against the vehicle frame instead of against a sensor. Wheel odometry from the vehicle bus is introduced as a virtual node whose lateral offset is known to be zero, because it refers to the rear-axle centre by construction.</p>
+<div class="eq"><span class="eqtag">(B3.2)</span><span class="eqbody">y<sub>CAN</sub> &equiv; 0 &nbsp;&rArr;&nbsp; y<sub>j</sub> becomes absolute p<sub>y,j</sub> in the vehicle frame</span><span class="eqcap">One extra node converts every relative value into a vehicle-frame absolute value, with no change to the estimator itself.</span></div>
+<div class="note warn"><span class="notelabel">Caution</span><div>This is a channel-configuration property, not a property unique to NH-Calib: any method able to consume a wheel-odometry channel can close the gauge the same way. It is described here because it is the only route from relative to absolute lateral offset within the method.</div></div>
+<h2 id="out"><span class="secno">4</span> Final output</h2>
+<p>The Stage 2 lateral offsets are combined with the Stage 1 reference-relative roll, pitch, yaw and longitudinal offset to form the complete result: a five-degree-of-freedom reference-relative extrinsic calibration for every sensor.</p>
+<div class="eq"><span class="eqtag">(B3.3)</span><span class="eqbody">T&#770;<sub>rj</sub> = ( <span class='sym'>&phi;</span><sub>rj</sub>, <span class='sym'>&theta;</span><sub>rj</sub>, <span class='sym'>&psi;</span><sub>rj</sub>, p<sub>x,rj</sub>, p<sub>y,rj</sub> ), &nbsp;&nbsp; p<sub>z</sub> not estimated</span><span class="eqcap">Vertical offset is excluded because planar motion provides no observation of it &mdash; a property of the motion, shared by every motion-based method.</span></div>
+<section class="seealso"><h2>See also</h2><ul><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a> &mdash; produces the edges</li><li><a href="relativization.html">A5 &middot; Reference relativization</a> &mdash; supplies the other four components</li><li><a href="observability.html">Observability decomposition</a> &mdash; why p<sub>z</sub> is absent</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

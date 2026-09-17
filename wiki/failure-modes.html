@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Drop stages, gate conditions and diagnostic guidance for NH-Calib.">
+<title>Gates and failure modes &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html" class="on">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Reference</div>
+<h1>Gates and failure modes</h1>
+<aside class="infobox"><div class="ibtitle">Gates and failure modes</div><table><tr><th>Principle</th><td>Fail loudly and early; never silently substitute</td></tr><tr><th>Granularity</th><td>Per channel, and per sensor pair in Stage 2</td></tr><tr><th>Propagation</th><td>Drops flow forward only; later modules never retry</td></tr><tr><th>Total failure</th><td>All channels dropped &rarr; the run raises an error</td></tr></table></aside>
+<p class="tagline">NH-Calib prefers dropping a channel to reporting a confident wrong number. This page lists every point where that decision is made, what it means, and what usually causes it.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#drops">Drop stages</a></li><li><span class="tocno">2</span><a href="#pairs">Pair-level rejections</a></li><li><span class="tocno">3</span><a href="#silent">Failure modes that do not raise anything</a></li><li><span class="tocno">4</span><a href="#diag">Diagnostics to look at first</a></li></ul></div>
+<h2 id="drops"><span class="secno">1</span> Drop stages</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Stage label</th><th>Condition</th><th>Module</th><th>Typical cause</th></tr></thead><tbody><tr><td><code>turn</code></td><td>No accepted segments after exclusion</td><td>A1</td><td>Straight-only sequence, or a drive whose turns never reach the peak or heading thresholds</td></tr><tr><td><code>axis</code></td><td>Fewer than 20 gated samples</td><td>A2</td><td>Very little turning, or angular rates that exceed the sanity bound and are rejected as artefacts</td></tr><tr><td><code>planar</code></td><td>Fewer than 50 samples after the excitation gate</td><td>A2 &rarr; A4</td><td>Weak yaw excitation, low speed, or a mismatch between sensor and platform-speed time ranges</td></tr><tr><td><code>step4</code></td><td>Regression cannot be formed</td><td>B2</td><td>Fewer than two associated segments, or a rank-deficient design</td></tr></tbody></table></div><figcaption>A dropped channel produces no downstream estimate. Surviving channels are still reported.</figcaption></figure>
+<div class="note key"><span class="notelabel">Key point</span><div>Drops are not errors in the software sense &mdash; they are the correct response to a sequence that does not contain the motion the method needs. The distinction to keep in mind: a drop means <em>this drive cannot answer</em>, not <em>this sensor is miscalibrated</em>.</div></div>
+<h2 id="pairs"><span class="secno">2</span> Pair-level rejections</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Rejection</th><th>Where</th><th>Meaning</th></tr></thead><tbody><tr><td>No associated segment</td><td>B1</td><td>The two sensors never observed a compatible turn together</td></tr><tr><td>Empty common window</td><td>B1</td><td>Associated segments overlap in index but not in time after offset correction</td></tr><tr><td>Quality verdict failed</td><td>B1</td><td>One sensor's waveform disagrees with the median in shape or magnitude</td></tr><tr><td>Withheld sign verdict</td><td>A3</td><td>Correlation too weak to decide the relative sign; reported as assumed, not applied</td></tr><tr><td>Excluded from shared body rate</td><td>A3</td><td>The channel exceeds the rate sanity bound on more than half its samples</td></tr><tr><td>Edge downweighted</td><td>B3</td><td>The robust loss suppresses a pairwise measurement inconsistent with the rest of the graph</td></tr></tbody></table></div></figure>
+<h2 id="silent"><span class="secno">3</span> Failure modes that do not raise anything</h2>
+<div class="note warn"><span class="notelabel">Planar-stream sign bypass</span><div>A channel whose angular velocity is exactly two-dimensional takes a shortcut that forces an identity levelling matrix and never reaches the sign-decision step. A physically inverted channel of this kind keeps its wrong sign without any warning. The joint gauge formulation covers these channels; the per-sensor scalar rule does not. See <a href='gauge.html'>A3</a>.</div></div>
+<div class="note warn"><span class="notelabel">Fixed nominal frame interval</span><div>Substituting a nominal sensor rate for the actual per-frame interval leaves every gate satisfied while biasing the integrals. This is a data-handling mistake rather than an algorithmic one, and it is invisible to the pipeline's own checks.</div></div>
+<div class="note warn"><span class="notelabel">Slip coefficient sign flip</span><div>The fitted coefficient absorbs whatever common bias the odometry front end carries, so it can change sign when the front end or its voxel size changes. Relative results are protected because the bias is common-mode; absolute longitudinal offset is not. Never report c as a vehicle property.</div></div>
+<div class="note warn"><span class="notelabel">Degraded reference channel</span><div>Because everything is stated relative to one reference sensor, that channel's own error enters every pair with the same sign. A weak reference degrades all results uniformly, which can look like a systematic offset rather than a single bad channel.</div></div>
+<h2 id="diag"><span class="secno">4</span> Diagnostics to look at first</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Symptom</th><th>Check</th><th>Page</th></tr></thead><tbody><tr><td>Channel dropped at <code>turn</code></td><td>Turn-rate trace against the two thresholds; segment count per channel</td><td><a href='m1-turn-segments.html'>A1</a></td></tr><tr><td>Roll or pitch off by roughly 180&deg;</td><td>Relative sign verdict and its correlation value</td><td><a href='gauge.html'>A3</a></td></tr><tr><td>Longitudinal offset drifts between runs</td><td>Fitted slip coefficient and the front-end configuration</td><td><a href='m3-x-yaw.html'>A4</a></td></tr><tr><td>Lateral result scatters across segments</td><td>Per-window heading change and the regression residuals</td><td><a href='sum-form.html'>B2</a></td></tr><tr><td>Pairwise values disagree around a cycle</td><td>Edge weights and residuals after robust fusion</td><td><a href='graph.html'>B3</a></td></tr><tr><td>One sensor is consistently offset</td><td>Whether it is the reference channel itself</td><td><a href='relativization.html'>A5</a></td></tr></tbody></table></div></figure>
+<p class="small">The single most informative test when results look wrong: replace the odometry with a ground-truth trajectory and rerun the same estimator. If the error collapses, the pipeline is sound and the front end is the cause; if it does not, the problem is in association, timing or convention.</p>
+<section class="seealso"><h2>See also</h2><ul><li><a href="parameters.html">Parameter reference</a> &mdash; the thresholds these gates apply</li><li><a href="observability.html">Observability decomposition</a> &mdash; failures that are properties of the motion, not bugs</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Sign ambiguity of the estimated rotation axis, and how NH-Calib resolves it.">
+<title>A3 &middot; Rotation-sign gauge &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html" class="on">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Stage 1 &rsaquo; A3</div>
+<h1>A3 &middot; Rotation-sign gauge</h1>
+<aside class="infobox"><div class="ibtitle">A3 &middot; Rotation-sign gauge</div><table><tr><th>Stage</th><td>1 &mdash; between A2 and A4</td></tr><tr><th>Problem</th><td>180&deg; flip of <strong>a</strong><sub>j</sub>, i.e. a <span class='sym'>Rot<sub>x</sub></span>(&pi;) gauge</td></tr><tr><th>Total freedom</th><td>2<sup>N</sup> for N sensors</td></tr><tr><th>Observable</th><td>N &minus; 1 relative bits</td></tr><tr><th>Not observable</th><td>1 global bit &mdash; fixed by convention</td></tr><tr><th>Effect on results</th><td>Relative extrinsics are invariant to the global bit</td></tr></table></aside>
+<p class="tagline">A rotation axis has no intrinsic direction. Every sensor therefore carries one sign bit that the motion constraint alone cannot fix. A3 separates the bits that data <em>can</em> decide from the one bit that must be declared.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#problem">Where the ambiguity comes from</a></li><li><span class="tocno">2</span><a href="#g1">Convention G1 &mdash; the global bit is declared</a></li><li><span class="tocno">3</span><a href="#g2">Convention G2 &mdash; relative bits are measured</a></li><li><span class="tocno">4</span><a href="#signature">Asynchronous signature check</a></li><li><span class="tocno">5</span><a href="#planar">The planar-stream trap</a></li><li><span class="tocno">6</span><a href="#report">What is reported</a></li></ul></div>
+<h2 id="problem"><span class="secno">1</span> Where the ambiguity comes from</h2>
+<p>A2 estimates the direction along which all angular-velocity samples lie. Both <strong>a</strong> and &minus;<strong>a</strong> describe the same line, and under planar motion both are consistent with every observation: flipping the axis flips the sign of the scalar rate, and the product is unchanged. Formally, post-multiplying a sensor rotation by <span class='sym'>Rot<sub>x</sub></span>(&pi;) = diag(1, &minus;1, &minus;1) leaves the planar residuals untouched.</p>
+<p>A sensor that is physically mounted upside down and a sensor that is upright therefore look identical to the plane-fitting step unless something external tells them apart. With N sensors the ambiguity has 2<sup>N</sup> branches, one independent bit per sensor.</p>
+<div class="eq"><span class="eqtag">(A3.1)</span><span class="eqbody">2<sup>N</sup> &nbsp;=&nbsp; (N &minus; 1) relative bits &nbsp;&times;&nbsp; 1 global bit</span><span class="eqcap">The decomposition that makes the problem tractable: relative bits are decidable from data; the global bit is not.</span></div>
+<h2 id="g1"><span class="secno">2</span> Convention G1 &mdash; the global bit is declared</h2>
+<div class="note gauge"><span class="notelabel">Convention, not an estimate</span><div>One reference channel is designated as the gauge anchor and <strong>declared</strong> to be mounted upright, i.e. |roll<sub>ref</sub>| &lt; 90&deg;. No other sensor is allowed to decide its sign independently. This statement cannot be verified or falsified from the motion data; it names the output frame rather than measuring it.</div></div>
+<ul><li>The correct name for the output frame is &ldquo;the body frame defined by assuming the reference sensor is upright&rdquo;. It is not claimed to be the physical z-up body frame.</li><li>If the reference sensor is in fact mounted rolled by 180&deg;, then p<sub>y</sub>, p<sub>z</sub>, <span class='sym'>&psi;</span> and &omega;<sub>z</sub> of <em>all</em> sensors flip together. One bit per dataset, recoverable afterwards.</li><li>A single external cue settles it if absolute values must be reported: chassis yaw-rate sign, IMU gravity direction, ground-plane normal, or a deployed transform tree.</li><li>Relative extrinsics &mdash; the quantities NH-Calib reports &mdash; are invariant to this bit, so the main results are unaffected.</li></ul>
+<h2 id="g2"><span class="secno">3</span> Convention G2 &mdash; relative bits are measured</h2>
+<p>The remaining N &minus; 1 bits are decidable, because the sensors are rigidly attached to one body: after rotating each sensor's angular velocity into the body frame, all reconstructions must agree. A flipped sensor reconstructs a waveform of opposite sign, which no rotation can hide.</p>
+<div class="eq"><span class="eqtag">(A3.2)</span><span class="eqbody">min<sub>{R<sub>s</sub>}, {<span class='sym'>&omega;</span><sub>b</sub>(t)}</sub> &nbsp; &sum;<sub>s</sub> &sum;<sub>t</sub> w<sub>s</sub>(t) &#8214; R<sub>s</sub><span class='sym'>&omega;</span><sup>s</sup>(t) &minus; <span class='sym'>&omega;</span><sub>b</sub>(t) &#8214;<sup>2</sup></span><span class="eqcap">Joint rotation averaging with a shared body angular velocity as an unknown, anchored at R<sub>ref</sub> = I. This is the rotational half of a hand&ndash;eye problem, solved by block coordinate descent: a weighted Procrustes update per sensor, then a weighted mean for the shared waveform.</span></div>
+<ul><li>The residual itself is invariant to the flip, but the <em>reconstructed vector</em> is not &mdash; that is precisely what the shared unknown exposes.</li><li>It works under purely planar motion as well, thanks to the shared scalar waveform. Extracting a principal axis per sensor in isolation would leave the ambiguity intact, so joint estimation is required.</li><li>The decision statistic is an <strong>uncentred</strong> cosine similarity. Drives dominated by one turn direction have a non-zero mean yaw rate, and mean removal would delete the very sign information being tested.</li><li>Below a minimum absolute correlation (default 0.2) the decision is withheld: the relative bit is reported as assumed rather than measured. Sensors are never flipped silently.</li><li>A sensor whose angular rate exceeds the sanity bound on more than half its samples is excluded from the shared average but still receives its own verdict, so a diverged channel cannot corrupt the reference.</li><li>G2 decides roll, pitch and the sign only. Rotation about the axis itself &mdash; yaw &mdash; remains undetermined at this point and is A4's job.</li></ul>
+<h2 id="signature"><span class="secno">4</span> Asynchronous signature check</h2>
+<p>A lightweight variant is available when even coarse time alignment between two sensors is unavailable. Each sensor writes one ordered signature vector over the drive: +1 for a turn about its local positive z-axis, &minus;1 for the opposite direction, 0 where no turn was detected.</p>
+<div class="eq"><span class="eqtag">(A3.3)</span><span class="eqbody"><strong>s</strong><sub>i</sub> &middot; <strong>s</strong><sub>j</sub> &gt; 0 &nbsp;&rArr;&nbsp; same branch&nbsp;&nbsp;&nbsp;&nbsp; <strong>s</strong><sub>i</sub> &middot; <strong>s</strong><sub>j</sub> &lt; 0 &nbsp;&rArr;&nbsp; opposite branches</span><span class="eqcap">Only the order of turns has to be matched, not their sample times. The check is therefore synchronization-free and leaves one global sign as the sole convention.</span></div>
+<h2 id="planar"><span class="secno">5</span> The planar-stream trap</h2>
+<div class="note warn"><span class="notelabel">Caution</span><div>Channels whose wx and wy are exactly zero &mdash; typical of two-dimensional radar odometry &mdash; are routed through a planar branch that forces an identity levelling matrix. In that branch the sign-decision step is never reached, so an upside-down channel keeps its wrong sign silently. The joint formulation of section 3 covers these channels because it does not distinguish sensor type; the per-sensor scalar rule does not.</div></div>
+<p>A related sharp edge: planarity is detected by an exact numerical closeness test, so a channel with angular noise at the 10<sup>&minus;4</sup>&nbsp;rad/s level can take a different code path from an otherwise identical channel. A physically meaningful threshold is the appropriate fix and is tracked separately.</p>
+<h2 id="report"><span class="secno">6</span> What is reported</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>gauge.anchor_channel</code></td><td>Which channel was declared upright</td></tr><tr><td><code>gauge.rule</code></td><td>Always <code>ref_upright</code> for G1</td></tr><tr><td><code>gauge.global_bit_observable</code></td><td>Constant <code>false</code> &mdash; states plainly that this is a convention</td></tr><tr><td><code>rel_flip</code> (per sensor)</td><td>+1 or &minus;1 relative to the anchor</td></tr><tr><td><code>rel_flip_source</code></td><td><code>omega_align</code>, <code>orient_can</code> or <code>assumed</code></td></tr><tr><td><code>omega_corr</code></td><td>The correlation value the decision was based on</td></tr></tbody></table></div><figcaption>Any table of absolute extrinsics must carry the gauge caption naming the anchor and the rule.</figcaption></figure>
+<section class="seealso"><h2>See also</h2><ul><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a> &mdash; produces the axis whose sign is at stake</li><li><a href="observability.html">Observability decomposition</a> &mdash; the full list of what is and is not observable</li><li><a href="failure-modes.html">Gates &amp; failure modes</a> &mdash; withheld decisions and excluded channels</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

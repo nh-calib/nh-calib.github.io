@@ -12,6 +12,33 @@ Published at <https://nh-calib.github.io/>.
 - Two-stage method overview with the current user-authored Figs. 1--3.
 - Graph-integrated relative calibration results for A2D2, RadarScenes, and Ford Multi-AV Logs 4--6.
 - Anonymous resource placeholders for the paper, code, processed data, and documentation.
+- `algorithm.html` &mdash; a single scrollable visual walkthrough of the pipeline.
+- `wiki/` &mdash; a generated, page-per-algorithm reference (13 pages).
+
+## Algorithm wiki
+
+`wiki/` is generated, not hand-edited. Content lives in Python dictionaries and is rendered to static HTML:
+
+| File | Role |
+| --- | --- |
+| `tools/build_wiki.py` | Entry point; builds every page and verifies that all internal links and images resolve |
+| `tools/wiki_render.py` | HTML renderer, sidebar navigation, page template, block types |
+| `tools/wiki_content_a.py` | Stage 1 pages (A1 turn segments, A2 motion-plane alignment, A3 sign gauge, A4 X/yaw/slip, A5 relativization) |
+| `tools/wiki_content_b.py` | Stage 2 pages (B1 alignment and windows, B2 sum-form relative Y, B3 graph integration) |
+| `tools/wiki_content_c.py` | Index, observability decomposition, notation, parameters, failure modes |
+| `wiki/wiki.css` | Wiki stylesheet (hand-edited) |
+
+Rebuild after any content change:
+
+```powershell
+& 'C:\Program Files\Python312\python.exe' tools/build_wiki.py
+```
+
+The build prints the size of every page and fails loudly if a cross-reference or image path is broken.
+
+Source of record for the wiki text: the project design note (`docs/design/NH-Calib_Core_Code_Mapping.md`) and the
+canonical manuscript. Numeric defaults are transcribed from those documents; where the two disagree, the page states
+both rather than silently choosing one.
 
 ## Local preview
 

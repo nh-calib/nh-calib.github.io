@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Pairwise relative lateral offset from integrated arc-length differences over common turning windows.">
+<title>B2 &middot; Sum-form relative Y &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html" class="on">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Stage 2 &rsaquo; B2</div>
+<h1>B2 &middot; Sum-form relative Y</h1>
+<aside class="infobox"><div class="ibtitle">B2 &middot; Sum-form relative Y</div><table><tr><th>Stage</th><td>2 &mdash; per sensor pair</td></tr><tr><th>Input</th><td>Common windows from B1; levelled forward velocity and yaw rate</td></tr><tr><th>Output</th><td>Pairwise <span class='sym'>&Delta;</span>p<sub>y</sub>, its standard error, segment count</td></tr><tr><th>Core relation</th><td><span class='sym'>&Delta;</span>I<sub>k</sub> = &minus;<span class='sym'>&Delta;</span>p<sub>y</sub> W<sub>k</sub></td></tr><tr><th>Estimator</th><td>Weighted robust linear regression over segments</td></tr><tr><th>Minimum data</th><td>Two associated segments; design rank at least two</td></tr></table></aside>
+<p class="tagline">Two sensors on the same turning platform travel concentric arcs. Over one complete turn their path-length difference is proportional to the heading change and to their lateral separation &mdash; and the unknown vehicle speed cancels out entirely.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#lever">The same lever arm, now longitudinal</a></li><li><span class="tocno">2</span><a href="#sum">Integrating instead of differencing</a></li><li><span class="tocno">3</span><a href="#regress">Regression over segments</a></li><li><span class="tocno">4</span><a href="#limit">What limits the accuracy</a></li></ul></div>
+<h2 id="lever"><span class="secno">1</span> The same lever arm, now longitudinal</h2>
+<p>A4 used the lateral component of the rigid-body velocity relation. B2 uses the longitudinal one: a sensor mounted to the left or right of the rotation centre travels faster or slower along the vehicle's forward direction during a turn.</p>
+<div class="eq"><span class="eqtag">(B2.1)</span><span class="eqbody">v<sub>j,x</sub> = v<sub>c,x</sub> &minus; &omega; p<sub>y,j</sub></span><span class="eqcap">The platform speed v<sub>c,x</sub> is common to every sensor and unknown, which is exactly why a single sensor cannot solve for its own lateral offset.</span></div>
+<p>Differencing two sensors at the same instant removes the common speed and leaves the lateral separation. That instantaneous form, however, requires the two sensors to be compared sample by sample &mdash; every sample then carries the full weight of any clock error.</p>
+<div class="eq"><span class="eqtag">(B2.2)</span><span class="eqbody"><span class='sym'>&Delta;</span>v<sub>x</sub> = v<sub>i,x</sub> &minus; v<sub>j,x</sub> = &minus;&omega; ( p<sub>y,i</sub> &minus; p<sub>y,j</sub> ) = &minus;&omega; <span class='sym'>&Delta;</span>p<sub>y</sub></span><span class="eqcap">Correct, but sample-wise: this is the formulation NH-Calib deliberately does <em>not</em> use.</span></div>
+<h2 id="sum"><span class="secno">2</span> Integrating instead of differencing</h2>
+<p>Integrating both sides over the common window turns a per-sample constraint into one measurement per segment. Timing error then acts only at the two boundaries, which B1 has already interpolated.</p>
+<div class="eq"><span class="eqtag">(B2.3)</span><span class="eqbody">I<sub>i,k</sub> = &int;<sub>t<sub>0,k</sub></sub><sup>t<sub>1,k</sub></sup> v<sub>i,x</sub>(t) dt, &nbsp;&nbsp; I<sub>j,k</sub> = &int;<sub>t<sub>0,k</sub></sub><sup>t<sub>1,k</sub></sup> v<sub>j,x</sub>(t) dt, &nbsp;&nbsp; W<sub>k</sub> = &int;<sub>t<sub>0,k</sub></sub><sup>t<sub>1,k</sub></sup> &omega;(t) dt = <span class='sym'>&Delta;&theta;</span><sub>k</sub></span><span class="eqcap">Forward distance travelled by each sensor over the identical window, and the platform's accumulated rotation in radians.</span></div>
+<div class="eq"><span class="eqtag">(B2.4)</span><span class="eqbody"><span class='sym'>&Delta;</span>I<sub>k</sub> = I<sub>i,k</sub> &minus; I<sub>j,k</sub> = &minus; <span class='sym'>&Delta;</span>p<sub>y,ij</sub> W<sub>k</sub></span><span class="eqcap">The arc-length difference of two concentric arcs is the radius difference times the swept angle. Sign convention: <span class='sym'>&Delta;</span>I = I<sub>i</sub> &minus; I<sub>j</sub> paired with <span class='sym'>&Delta;</span>p<sub>y,ij</sub> = p<sub>y,i</sub> &minus; p<sub>y,j</sub>.</span></div>
+<div class="note key"><span class="notelabel">Why this is the central trick</span><div>The vehicle's forward speed profile &mdash; unknown, time-varying, and shared &mdash; disappears completely from (B2.4). What remains is a straight line through the origin whose slope is the quantity being calibrated. No speed sensor, no map, and no overlapping field of view is involved.</div></div>
+<h2 id="regress"><span class="secno">3</span> Regression over segments</h2>
+<p>Each associated segment contributes one point (W<sub>k</sub>, <span class='sym'>&Delta;</span>I<sub>k</sub>). Collecting them across the drive turns calibration into a one-dimensional slope-fitting problem.</p>
+<div class="eq"><span class="eqtag">(B2.5)</span><span class="eqbody">Z<sub>k</sub> = p<sub>y</sub> W<sub>k</sub> + <span class='sym'>&beta;</span> T<sub>k</sub> + <span class='sym'>&epsilon;</span><sub>k</sub>, &nbsp;&nbsp;&nbsp; w<sub>k</sub> = |W<sub>k</sub>|<sup>&nbsp;p&minus;2</sup></span><span class="eqcap">A two-parameter weighted fit. The second term, proportional to segment duration T<sub>k</sub>, absorbs a slowly varying scale discrepancy between the two channels so that it is not mistaken for lateral offset. With the default weight exponent p = 0.5 the weight is |W<sub>k</sub>|<sup>&minus;1.5</sup>.</span></div>
+<ul><li>At least two associated segments are required and the design matrix must have rank two; otherwise the pair is rejected rather than reported with a fabricated confidence.</li><li>Large |W<sub>k</sub>| segments carry more slope information, which is why weighting is expressed in terms of accumulated heading rather than duration or sample count.</li><li>Both turn directions should be represented. A drive that only ever turns one way still identifies the slope, but a drift between channels aliases into it far more easily.</li><li>Because each segment gives one independent measurement, the standard error scales with the number of valid turns &mdash; which is why a drive with more turning windows reports a tighter result.</li></ul>
+<div class="note code"><span class="notelabel">Representative value</span><div>A sensor pair produces one measurement per segment, and those measurements scatter. The pair's reported value is the robust aggregate, obtained with an M-estimator. Alternatives &mdash; plain least squares, RANSAC, median &mdash; were compared and the choice of aggregator was not the dominant error source.</div></div>
+<h2 id="limit"><span class="secno">4</span> What limits the accuracy</h2>
+<p>The estimator consumes odometry, so its accuracy is bounded by how differently the two channels' odometry drifts inside a window. Feeding ground-truth trajectories into the same estimator produces sub-millimetre agreement, which localises the residual error in the front end rather than in the formulation.</p>
+<ul><li>Per-window scatter is the dominant term, and it does not shrink by reweighting or by re-detecting windows &mdash; both were tested and neither helps.</li><li>It does shrink with more independent turns. Pooling several logs of the same platform reduced the reported lateral error substantially on the Ford configuration.</li><li>Common-window construction removes boundary mismatch but not differential drift <em>inside</em> the window; that part is a genuine lower bound set by the odometry.</li><li>The same lower bound applies to interval-based hand&ndash;eye methods, which consume the same integrated motion. Only methods that register raw point clouds against each other avoid it &mdash; at the cost of requiring overlapping fields of view.</li></ul>
+<section class="seealso"><h2>See also</h2><ul><li><a href="time-alignment.html">B1 &middot; Time alignment</a> &mdash; how the common window is built</li><li><a href="graph.html">B3 &middot; Graph integration</a> &mdash; combining many pairwise measurements</li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a> &mdash; the lateral counterpart of the same lever arm</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>

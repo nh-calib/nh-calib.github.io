@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="author" content="Anonymous">
+<meta name="description" content="Which extrinsic degrees of freedom are observable under wheeled-vehicle planar motion, and from what.">
+<title>Observability decomposition &mdash; NH-Calib algorithm wiki</title>
+<link rel="stylesheet" href="wiki.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<button class="navtoggle" aria-controls="sidenav" aria-expanded="false">Contents menu</button>
+<div class="shell">
+<div id="sidenav"><nav class="sidenav" aria-label="Wiki navigation"><a class="brand" href="../index.html">NH-Calib<span>project page</span></a><div class="navtitle">Algorithm wiki</div><div class="navgroup">Overview</div><ul><li><a href="index.html">Algorithm index</a></li><li><a href="observability.html" class="on">Observability decomposition</a></li></ul><div class="navgroup">Stage 1 &middot; per sensor</div><ul><li><a href="m1-turn-segments.html">A1 &middot; Turn-segment extraction</a></li><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a></li><li><a href="gauge.html">A3 &middot; Rotation-sign gauge</a></li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a></li><li><a href="relativization.html">A5 &middot; Reference relativization</a></li></ul><div class="navgroup">Stage 2 &middot; across sensors</div><ul><li><a href="time-alignment.html">B1 &middot; Time alignment &amp; windows</a></li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a></li><li><a href="graph.html">B3 &middot; Graph integration</a></li></ul><div class="navgroup">Reference</div><ul><li><a href="notation.html">Notation &amp; frames</a></li><li><a href="parameters.html">Parameter reference</a></li><li><a href="failure-modes.html">Gates &amp; failure modes</a></li></ul></nav></div>
+<main id="main">
+<article class="page">
+<div class="crumbs">Algorithm wiki &rsaquo; Overview</div>
+<h1>Observability decomposition</h1>
+<aside class="infobox"><div class="ibtitle">Observability decomposition</div><table><tr><th>Total</th><td>6 extrinsic degrees of freedom</td></tr><tr><th>Sensor-alone</th><td>Roll, Pitch, Yaw, X</td></tr><tr><th>Needs association</th><td>Y (lateral offset)</td></tr><tr><th>Unobservable</th><td>Z (vertical offset)</td></tr><tr><th>Gauge freedom</th><td>One global rotation sign bit</td></tr><tr><th>Consequence</th><td>Only one component depends on inter-sensor timing</td></tr></table></aside>
+<p class="tagline">Six degrees of freedom, three fates. Four are recoverable by each sensor on its own, one needs two sensors to observe the same turn, and one is not observable from planar motion at all. Every design choice in NH-Calib follows from this table.</p>
+<div class="toc"><div class="toctitle">Contents</div><ul><li><span class="tocno">1</span><a href="#table">The decomposition</a></li><li><span class="tocno">2</span><a href="#four">Why four components come free</a></li><li><span class="tocno">3</span><a href="#one">Why Y is different</a></li><li><span class="tocno">4</span><a href="#z">Why Z is absent</a></li><li><span class="tocno">5</span><a href="#gauge">Gauge freedoms</a></li><li><span class="tocno">6</span><a href="#consequence">What the decomposition buys</a></li></ul></div>
+<h2 id="table"><span class="secno">1</span> The decomposition</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Component</th><th>Observed from</th><th>Second sensor?</th><th>Timing dependence</th><th>Module</th></tr></thead><tbody><tr><td>Roll <span class='sym'>&phi;</span></td><td>Direction of the sensor's own angular-velocity axis</td><td>No</td><td>None</td><td><a href='m2-roll-pitch.html'>A2</a></td></tr><tr><td>Pitch <span class='sym'>&theta;</span></td><td>Same axis, second Euler component</td><td>No</td><td>None</td><td><a href='m2-roll-pitch.html'>A2</a></td></tr><tr><td>Yaw <span class='sym'>&psi;</span></td><td>Rotation bringing the sensor's lateral velocity onto the platform axis</td><td>No</td><td>None</td><td><a href='m3-x-yaw.html'>A4</a></td></tr><tr><td>X (p<sub>x</sub>)</td><td>Lateral velocity induced by yaw rotation, v<sub>y</sub> = &omega;p<sub>x</sub></td><td>No</td><td>None, when the sensor's own angular rate is used</td><td><a href='m3-x-yaw.html'>A4</a></td></tr><tr><td>Y (p<sub>y</sub>)</td><td>Arc-length difference of two sensors over one turn</td><td><strong>Yes</strong></td><td><strong>Confined to two window boundaries</strong></td><td><a href='sum-form.html'>B2</a>, <a href='graph.html'>B3</a></td></tr><tr><td>Z (p<sub>z</sub>)</td><td>Nothing &mdash; planar motion provides no vertical excitation</td><td>&mdash;</td><td>&mdash;</td><td>not estimated</td></tr></tbody></table></div><figcaption>The column that matters is the third one. Four components never require another sensor to exist, let alone to be synchronized with.</figcaption></figure>
+<h2 id="four"><span class="secno">2</span> Why four components come free</h2>
+<p>Wheeled-vehicle motion supplies two constraints that a single sensor can exploit without any external reference.</p>
+<ol><li><strong>Planar motion.</strong> Within a segment the platform rotates about one axis. A sensor measuring its own angular velocity therefore measures the plane normal in its own frame, which fixes two rotational degrees of freedom &mdash; roll and pitch &mdash; up to a sign.</li><li><strong>The non-holonomic constraint.</strong> The rear-axle centre has no lateral velocity, so any lateral velocity a sensor measures during a turn is its own longitudinal lever arm. This fixes yaw and the longitudinal offset from the same residual.</li></ol>
+<div class="note key"><span class="notelabel">Key point</span><div>These are two independent assumptions, not one. Planar motion is a statement about the road and the body; the non-holonomic constraint is a statement about the wheels. Conflating them would make the argument circular, because interval-based alternatives are affected by planar motion too.</div></div>
+<h2 id="one"><span class="secno">3</span> Why Y is different</h2>
+<p>The lateral offset appears in the longitudinal velocity relation v<sub>j,x</sub> = v<sub>c,x</sub> &minus; &omega;p<sub>y,j</sub>. Unlike the lateral equation, this one contains the platform's forward speed, and that speed is unknown and time-varying. A sensor cannot separate its own lateral offset from a speed it cannot measure independently.</p>
+<p>Two sensors can, because the unknown speed is common to both and cancels in the difference. That is the entire reason Stage 2 exists, and the reason it is restricted to one component.</p>
+<div class="note note"><span class="notelabel">A special case, deliberately not proposed</span><div>If the platform held a constant forward speed while driving a variety of curvatures, the speed term would become a constant and a single sensor could identify its own lateral offset from the variation of the yaw rate alone. That requires a dedicated manoeuvre and does not hold in ordinary driving, so it is noted only as an observation and is not part of the proposed method, its claims, or its experiments.</div></div>
+<h2 id="z"><span class="secno">4</span> Why Z is absent</h2>
+<p>Vertical offset would need the platform to rotate about a horizontal axis, or to translate vertically in a way the sensors can observe. Locally planar driving supplies neither in sufficient magnitude, so no amount of data collection makes it observable.</p>
+<div class="note warn"><span class="notelabel">Caution</span><div>This is a property of the <em>motion</em>, not a weakness of NH-Calib relative to other motion-based methods. Interval-based hand&ndash;eye formulations lose the same component under the same motion. It is stated here so that a five-component output is not mistaken for an incomplete implementation.</div></div>
+<h2 id="gauge"><span class="secno">5</span> Gauge freedoms</h2>
+<figure class="tablewrap "><div class="tscroll"><table><thead><tr><th>Freedom</th><th>Status</th><th>How it is handled</th></tr></thead><tbody><tr><td>Global rotation sign (one bit for the whole platform)</td><td>Not observable from planar motion</td><td>Declared: the reference sensor is defined to be upright &mdash; see <a href='gauge.html'>A3</a></td></tr><tr><td>Per-sensor relative sign bits (N &minus; 1)</td><td>Observable</td><td>Measured by joint rotation averaging against a shared body angular velocity</td></tr><tr><td>Additive constant on all lateral offsets</td><td>Not observable from differences alone</td><td>Removed by fixing the reference node at y<sub>r</sub> = 0 in <a href='graph.html'>B3</a></td></tr><tr><td>Vehicle-frame lateral origin</td><td>Observable only with an extra channel</td><td>Optional wheel-odometry virtual node at the rear-axle centre</td></tr></tbody></table></div></figure>
+<h2 id="consequence"><span class="secno">6</span> What the decomposition buys</h2>
+<ul><li>Sensors that share no field of view can still be calibrated against each other, because nothing is registered between them.</li><li>Adding a sensor adds one node and its edges; the existing per-sensor estimates do not have to be redone.</li><li>A channel whose odometry degrades affects its own estimates and its own edges; it does not corrupt the others through a shared trajectory constraint.</li><li>Only one of the five reported components is exposed to inter-sensor clock error, and that exposure is further confined to two integration boundaries.</li></ul>
+<div class="note warn"><span class="notelabel">What this does not claim</span><div>Reducing the number of alignment-dependent components is not the same as being robust to misalignment. When a clock offset is injected deliberately, the lateral component degrades; the measured advantage is that the other four components do not move at all, and that integrating over a window degrades more slowly than differencing sample by sample. Time alignment itself is ordinary preprocessing available to any method.</div></div>
+<section class="seealso"><h2>See also</h2><ul><li><a href="m2-roll-pitch.html">A2 &middot; Motion-plane alignment</a> &mdash; the planar-motion half of the argument</li><li><a href="m3-x-yaw.html">A4 &middot; X, Yaw and slip</a> &mdash; the non-holonomic half</li><li><a href="sum-form.html">B2 &middot; Sum-form relative Y</a> &mdash; the one component that needs association</li></ul></section>
+<div class="pagefoot">
+<span>Compiled from the project design note and the manuscript. Last updated September 2026.</span>
+<span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+</div>
+</article>
+</main>
+</div>
+<script>
+(function(){
+  var b=document.querySelector('.navtoggle'), s=document.getElementById('sidenav');
+  if(!b||!s){return;}
+  b.addEventListener('click',function(){
+    var open=s.classList.toggle('open');
+    b.setAttribute('aria-expanded', open?'true':'false');
+  });
+})();
+</script>
+</body>
+</html>
