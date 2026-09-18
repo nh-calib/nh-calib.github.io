@@ -2,7 +2,7 @@
 
 Static, dependency-free project page for the anonymous NH-Calib manuscript:
 
-> **NH-Calib: Vehicle-Motion-Constrained Self-Calibration of Onboard Sensor Extrinsics**
+> **NH-Calib: Self-Calibration of Sensor Extrinsics under Wheeled-Mobility Motion Constraints**
 
 Published at <https://nh-calib.github.io/>.
 
