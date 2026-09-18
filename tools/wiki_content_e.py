@@ -88,6 +88,9 @@ INVENTORY = {
                  "value, not an estimation error, and it is why a planar two-dimensional hand-eye variant cannot "
                  "represent this layout."},
 
+        {"t": "fig", "src": "figs/rs-sensor-configuration.png",
+         "alt": "Radar mounting positions, boresight directions, sector coverage and the published parameter table",
+         "cap": "The RadarScenes layout, which is the reason this dataset is in the study. All four radars sit on the front bumper at 3.663&ndash;3.860&nbsp;m ahead of the rear axle with boresights at &plusmn;85&deg; and &plusmn;25&deg;, so the &plusmn;60&deg; sectors tile outward and the opposed pairs never see the same scene."},
         {"t": "h", "level": 2, "id": "ford-logs", "no": "2", "text": "Ford: all six logs profiled, three used"},
         {"t": "p", "text": "Six Ford V2 logs were downloaded and profiled before any calibration was run. The "
                            "profile is computed from the released pose stream alone and decides whether a drive "
@@ -129,6 +132,9 @@ INVENTORY = {
          "cap": "Sample counts differ by three orders of magnitude between A2D2 and RadarScenes. The A2D2 result "
                 "rests on far fewer samples than its error suggests, which is why its standard error matters."},
 
+        {"t": "fig", "src": "figs/rs-point-sparsity.jpg",
+         "alt": "Single radar scans, detections per scan, nearest-neighbour spacing, azimuth coverage and range distribution",
+         "cap": "What one radar scan contains. (a)&ndash;(b) A synchronised four-radar scan holds 647&ndash;701 detections in total. (c) Per radar the median is 32&ndash;140 detections. (d) The median nearest-neighbour spacing is 0.97&ndash;1.18&nbsp;m, so no surface is resolved. (e) The four azimuth sectors are disjoint. This is the measurement behind treating radar geometry as unusable for scan matching here."},
         {"t": "h", "level": 2, "id": "overlap", "no": "4",
          "text": "Measured co-visibility between sensor pairs"},
         {"t": "p", "text": "The paper argues qualitatively that A2D2 side units share no view with the front ones "
@@ -179,6 +185,12 @@ INVENTORY = {
                  "correlation coefficient, on the grounds that a reader who has not seen the overlap definition "
                  "cannot interpret the number. The measurement is kept here."},
 
+        {"t": "fig", "src": "figs/localmap-covisibility.jpg",
+         "alt": "Four bird's-eye local-map pairs coloured by which sensor saw each point",
+         "cap": "The overlap measurement as pictures. Two local maps are placed in one frame using the published extrinsics and coloured by origin: blue and orange are seen by one sensor only, purple by both. A2D2 front-left against front-right reaches 0.973 co-visibility; the two A2D2 side units reach 0.078 over the same window length; Ford red against blue holds 0.844; the opposed radar pair reaches 0.000 &mdash; the two point sets are disjoint on the page."},
+        {"t": "fig", "src": "figs/overlap-vs-registration-error.png",
+         "alt": "Registration lateral error against ground-truth co-visibility for eighteen converged sensor pairs",
+         "cap": "The same relationship as a scatter, across the three datasets. Registration error falls by three orders of magnitude as co-visibility rises, with rank correlation &rho; = &minus;0.897 over the 18 converged pairs. Open triangles are the four pairs where registration found no consensus at all; all of them sit at co-visibility below 0.42, so including them could only strengthen the trend."},
         {"t": "h", "level": 2, "id": "other", "no": "5", "text": "Datasets examined and not used"},
         {"t": "table",
          "head": ["Dataset", "Why it was examined", "Why it is not a result"],
@@ -195,6 +207,9 @@ INVENTORY = {
          ],
          "cap": "Datasets that were processed but produce no reportable calibration number, with the specific "
                 "reason in each case."},
+        {"t": "fig", "src": "figs/mts-kiss-paths.png",
+         "alt": "Six-channel LiDAR odometry paths over fifteen short sequences, one panel per channel",
+         "cap": "The six-LiDAR recording in the row above, drawn per channel over its fifteen indexed sequences. The paths are tens of metres long and the channels disagree on the shape of the same manoeuvre &mdash; the rear and side-mounted units in particular. That per-channel disagreement, not the calibration stage, is what puts every method in the same error band on this dataset."},
     ],
     "seealso": [
         ("datasets.html", "Datasets &amp; front end", "the configuration summary the paper reports"),
@@ -271,6 +286,12 @@ SEGMENTS = {
                  "spend almost none. Everything this method estimates about the lateral offset comes out of that "
                  "small fraction of the recording."},
 
+        {"t": "fig", "src": "figs/a2d2-turn-gate-signals.png",
+         "alt": "Chassis and LiDAR-median yaw rate with accepted turn windows shaded, and the matching speed trace",
+         "cap": "One full A2D2 drive with the accepted turn windows shaded. The chassis reference and the LiDAR-median yaw rate lie on top of each other, which is the precondition for associating segments across sensors at all. The wide shaded block near 330&ndash;390&nbsp;s is the long roundabout that carries most of the integrated rotation in this drive; the dashed line is a visual guide, not the detection threshold."},
+        {"t": "fig", "src": "figs/turn-population.png",
+         "alt": "Histograms of segment duration, net rotation and the share of samples below the rate ceiling",
+         "cap": "The population of accepted segments in two drives. Most segments last a few seconds and turn 60&ndash;150&nbsp;deg; the A2D2 outlier past 30&nbsp;s and 900&nbsp;deg is the roundabout. The right panel shows how much of each segment still sits below the 15&nbsp;deg/s ceiling that the attitude stage applies downstream, which is why the sample count for A2, not the segment count, is the binding number there."},
         {"t": "h", "level": 2, "id": "quality", "no": "3", "text": "Per-segment quality statistics"},
         {"t": "p", "text": "Every sensor-segment is scored against the consensus of the other channels before it is "
                            "allowed into the estimate. Detection on each sensor's own twist yields 5, 12 and 10 turn segments in "
@@ -394,6 +415,9 @@ ODOMETRY = {
          "text": "The 0.82 mm figure is an oracle diagnostic. It uses a ground-truth trajectory as input and can "
                  "never be reported as an achieved calibration accuracy."},
 
+        {"t": "fig", "src": "figs/a2d2-odometry-turns.png",
+         "alt": "Five LiDAR odometry trajectories and the chassis reference, with accepted turns highlighted",
+         "cap": "All five A2D2 LiDAR trajectories and the chassis reference in one frame, with the accepted turn segments thickened. Two things are visible: the five front ends agree on the route to within a few metres over 4&nbsp;km, and the rotation information is concentrated in a handful of places. Everything the calibrator learns comes from the thickened parts."},
         {"t": "h", "level": 2, "id": "ford-channels", "no": "2", "text": "Ford: per-channel tracking quality"},
         {"t": "p", "text": "Each of the four Ford channels is tracked independently over the whole drive. Path "
                            "length against the released pose stream is the cheapest honest check: it is sensitive "
@@ -498,6 +522,9 @@ ODOMETRY = {
                            "turn yaw-rate RMSE that is unchanged to four digits when the interval definition is "
                            "swapped. A2D2 is the only affected dataset."},
 
+        {"t": "fig", "src": "figs/a2d2-dt-ablation.png",
+         "alt": "Turn-sample yaw-rate RMSE for three frame-interval definitions on five A2D2 LiDARs",
+         "cap": "The defect and its repair, per sensor. Using the stored frame interval, the yaw rate reconstructed from the pose stream disagrees with the reference by 2.2&ndash;3.7&nbsp;deg/s; recomputing the interval from timestamps halves it; substituting the nominal 30&nbsp;Hz interval brings every channel to about 0.3&nbsp;deg/s. The poses are identical in all three bars &mdash; only the time base changes."},
         {"t": "h", "level": 2, "id": "radar", "no": "6", "text": "RadarScenes: why the input is constructed"},
         {"t": "p", "text": "Geometric radar odometry was not usable on this data. The detections are too sparse and "
                            "too weakly structured to register scan to scan; the co-visibility measurements on the "
@@ -543,6 +570,9 @@ ODOMETRY = {
          "text": "The pattern across all of these is the same: this method's accuracy ceiling is the differential "
                  "quality of the per-channel twist inside turns. Nothing in Stage 1 or Stage 2 can recover what "
                  "the front end did not measure."},
+        {"t": "fig", "src": "figs/localmap-frontend-compare.jpg",
+         "alt": "Top view of a ten-second accumulated local map from two odometry front ends on identical scans",
+         "cap": "Ten seconds of accumulated map from the same A2D2 scans under two front ends, coloured by height. Both produce a usable map at this scale, which is the point: front ends that look equivalent on a map can still differ in the differential twist quality inside turns, and that difference is what the table above is measuring."},
     ],
     "seealso": [
         ("datasets.html", "Datasets &amp; front end", "the configuration table for the reported runs"),
@@ -603,6 +633,12 @@ ABLATIONS = {
             "identical.",
         ]},
 
+        {"t": "fig", "src": "figs/a2d2-window-dt-summary.png",
+         "alt": "Relative lateral error for three combinations of window handling and frame interval on A2D2",
+         "cap": "The headline of the table above in one picture: independent windows on the stored interval, common window on the stored interval, and common window on a fixed interval. The time base is the dominant factor; the common window is the second."},
+        {"t": "fig", "src": "figs/ford-dt-ablation.png",
+         "alt": "Mean, RMS and maximum relative lateral error for stored and fixed frame intervals under two Ford front ends",
+         "cap": "The same experiment on Ford, where the stored timestamps are <em>not</em> defective. Fixing the interval moves the KISS-ICP result by a fraction of a millimetre, and helps GICP only by trimming its worst pair. The A2D2 gain is therefore a repair of a dataset defect, not a general-purpose improvement."},
         {"t": "h", "level": 2, "id": "tau", "no": "2", "text": "Injected clock offset"},
         {"t": "p", "text": "A synthetic offset is added to one channel's timestamps and the whole estimator is "
                            "re-run, over a grid up to &plusmn;763 ms &mdash; the native acquisition offset between "
@@ -651,6 +687,9 @@ ABLATIONS = {
                 "offset when the angular rate is taken from the bus. Mounting yaw stays below 0.13&deg; in every "
                 "condition."},
 
+        {"t": "fig", "src": "figs/tau-sensitivity.png",
+         "alt": "Estimator response to an injected inter-sensor clock offset, and the response of X and Yaw",
+         "cap": "The injected-offset sweep on A2D2. (a) Only the cross-sensor component reacts: the segment form stays lowest until it rejects the pair outright at &plusmn;763&nbsp;ms (crosses), while hand-eye and the frame-wise control degrade smoothly. (b) With the offset applied between sensors, the longitudinal offset and yaw are exactly invariant; they only move when the sensor is also shifted against the vehicle bus <em>and</em> the yaw rate is taken from that bus, which is the cost of the bus-substitution variant."},
         {"t": "h", "level": 2, "id": "slip", "no": "3", "text": "Slip coefficient"},
         {"t": "p", "text": "The lateral-velocity relaxation term carries one shared coefficient. Three conditions: "
                            "free fitting, forcing it to zero, and forcing a physically motivated positive prior."},
@@ -731,6 +770,9 @@ ABLATIONS = {
             "error no longer matters.",
         ]},
 
+        {"t": "fig", "src": "figs/ford-leveling-ablation.png",
+         "alt": "Relative lateral error with and without estimated-axis levelling on Ford",
+         "cap": "Levelling is preprocessing, not a claimed output, but it is not optional: removing it costs 53&nbsp;% on the Ford relative lateral error, with the estimated axis and no ground truth anywhere in the loop."},
         {"t": "h", "level": 2, "id": "deskew-abl", "no": "6", "text": "Deskew"},
         {"t": "table",
          "head": ["Condition", "Log4", "Log5", "Log6", "Windows kept"],

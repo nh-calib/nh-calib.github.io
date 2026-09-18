@@ -13,7 +13,7 @@ Published at <https://nh-calib.github.io/>.
 - Graph-integrated relative calibration results for A2D2, RadarScenes, and Ford Multi-AV Logs 4--6.
 - Anonymous resource placeholders for the paper, code, processed data, and documentation.
 - `algorithm.html` &mdash; a single scrollable visual walkthrough of the pipeline.
-- `wiki/` &mdash; a generated, page-per-algorithm reference (15 pages).
+- `wiki/` &mdash; a generated, page-per-algorithm reference (19 pages, 38 figures).
 
 ## Algorithm wiki
 
@@ -27,7 +27,9 @@ Published at <https://nh-calib.github.io/>.
 | `tools/wiki_content_b.py` | Stage 2 pages (B1 alignment and windows, B2 sum-form relative Y, B3 graph integration) |
 | `tools/wiki_content_c.py` | Index, observability decomposition, notation, parameters, failure modes |
 | `tools/wiki_content_d.py` | Evaluation pages (datasets and front end, results and metric) |
+| `tools/wiki_content_e.py` | Behind-the-paper pages (sensor and drive inventory, turn segments, odometry front end, ablation catalogue) |
 | `wiki/wiki.css` | Wiki stylesheet (hand-edited) |
+| `wiki/figs/` | Experiment figures referenced by the pages (web copies, max width 1500 px) |
 
 Rebuild after any content change:
 
@@ -36,6 +38,14 @@ Rebuild after any content change:
 ```
 
 The build prints the size of every page and fails loudly if a cross-reference or image path is broken.
+
+### Figures
+
+`wiki/figs/` holds web copies of figures produced by the experiment runs; the originals, with their index
+notes and source data, stay in `figures/` in the research tree. Copies are downscaled to 1500 px and the
+point-cloud panels are stored as JPEG. Each figure caption states what the panel shows, which run produced
+it, and, where a figure is a schematic rather than a measurement, says so explicitly. Figures carrying
+numbers from a superseded protocol are captioned with that protocol named.
 
 Source of record for the wiki text: the project design note (`docs/design/NH-Calib_Core_Code_Mapping.md`) and the
 canonical manuscript. Numeric defaults are transcribed from those documents; where the two disagree, the page states

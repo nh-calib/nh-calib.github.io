@@ -66,6 +66,9 @@ DATASETS = {
                  "signal propagates into X. The usability and the independence limits of that path are reported "
                  "together; it is not interchangeable with the LiDAR-only results."},
 
+        {"t": "fig", "src": "figs/rs-doppler-frontend.jpg",
+         "alt": "Doppler ego-velocity against vehicle speed, agreement scatter, sensor-frame lateral velocity and yaw-rate input",
+         "cap": "The radar motion front end. (a) Doppler ego-velocity magnitude tracks the vehicle speed across a sequence. (b) Against the speed predicted at each mount point, the RMSE is 0.14&ndash;1.19&nbsp;m/s. (c) The sensor-frame lateral component is large for the side-looking units by construction &mdash; that component is the signal A4 uses. (d) Rotation is not observable from one 120&deg; sector, so the yaw rate comes from the vehicle bus; the shaded band is what the turn gate rejects."},
         {"t": "h", "level": 2, "id": "frontend", "no": "3", "text": "Front-end settings"},
         {"t": "table",
          "head": ["Setting", "A2D2", "Ford Multi-AV", "RadarScenes"],
@@ -86,12 +89,24 @@ DATASETS = {
                  "alternating error, so both the time axis and the velocity reconstructed from pose increments are "
                  "corrected consistently. Using the stored intervals directly corrupts every downstream velocity."},
 
+        {"t": "fig", "src": "figs/a2d2-kiss-paths.png",
+         "alt": "Five A2D2 LiDAR odometry paths, one panel per sensor, each in its own sensor frame",
+         "cap": "What the LiDAR front end produces on A2D2: one path per sensor, each drawn in its own sensor frame, which is why the same drive appears rotated from panel to panel. The calibrator never consumes these poses directly &mdash; it consumes the per-frame twist derived from them. Settings shown in the figure title belong to the voxel-sweep run, not to the reported configuration in the table above."},
         {"t": "h", "level": 2, "id": "radar-loop", "no": "4", "text": "RadarScenes: alternating offset and calibration"},
         {"t": "p", "text": "For RadarScenes the time offset and the calibration are updated alternately for three "
                            "iterations before the final two-dimensional evaluation. Roll and Pitch are not estimation "
                            "targets for this dataset, because the Doppler-plus-CAN input is two-dimensional by "
                            "construction. The final run estimated a slip coefficient of <i>c</i> = 0.0049."},
 
+        {"t": "fig", "src": "figs/rs-sync-convergence.png",
+         "alt": "Time offset, mounting yaw, longitudinal and lateral offset errors against iteration index",
+         "cap": "The alternation converges in one update. (a) All four offsets move from zero to about &minus;115&nbsp;ms on the first pass and stay there. (b)&ndash;(d) Mounting yaw, longitudinal and lateral offset errors settle at the same point. The residual longitudinal offset of about &minus;0.21&nbsp;m in panel (c) is this particular run's missing slip term, not a synchronisation residual; the slip ablation on the results page shows it closing to 12&nbsp;mm once the term is restored."},
+        {"t": "fig", "src": "figs/rs-relative-py-synced.png",
+         "alt": "Pairwise forward-velocity difference against yaw rate for all six radar pairs after synchronisation",
+         "cap": "The cross-sensor relation on the synchronised radar streams: for each pair, the difference of forward velocities against the yaw rate, whose slope is the relative lateral offset. Per-pair errors run from 5.2 to 31.6&nbsp;mm. No vehicle speed datum enters the slope, which is the same cancellation the LiDAR datasets get from the integrated form."},
+        {"t": "fig", "src": "figs/rs-py-accuracy.png",
+         "alt": "Absolute and relative lateral offsets against published values, with an error summary",
+         "cap": "Accuracy of the radar variant <em>before</em> the alternating offset estimation was introduced: 31&nbsp;mm mean absolute error on the four absolute offsets and 43&nbsp;mm on the six pairs. The synchronised run in the results table reaches 16.5&nbsp;mm relative. Both are scored against the published extrinsics, which the estimator never reads."},
         {"t": "h", "level": 2, "id": "exclusions", "no": "5", "text": "What was excluded, and why it is reported"},
         {"t": "ul", "items": [
             "<strong>Ford Log2 and Log3</strong> did not contain enough valid turn segments and were excluded from "
@@ -109,6 +124,9 @@ DATASETS = {
          "text": "Ford INS and official ground-truth poses may share a positioning source. They are therefore not "
                  "interpreted as an independent motion reference."},
 
+        {"t": "fig", "src": "figs/rs-rejected-motion-source.jpg",
+         "alt": "Yaw-rate distribution, mounting errors and conditioning for the rejected radar scan-matching front end",
+         "cap": "Why radar scan matching was rejected as the motion source, even though it ran on all 158 sequences. (a) Its turn-gated yaw rate reaches 2458&ndash;2557&nbsp;deg/s where the vehicle bus never exceeds 47&nbsp;deg/s. (b)&ndash;(c) Mounting yaw error up to several degrees and longitudinal error up to 3.7&nbsp;m. (d) The joint fit is conditioned at 1.3&times;10<sup>15</sup> against 7.1 for the adopted Doppler front end. This is a front-end verdict, not a statement about radar in general."},
         {"t": "h", "level": 2, "id": "gt", "no": "6", "text": "Where ground truth is and is not used"},
         {"t": "p", "text": "All main-result cells are ground-truth-free during estimation. Official extrinsics enter "
                            "only at scoring time, through the reference-sensor anchor described on the "
@@ -225,12 +243,21 @@ RESULTS = {
                  "On Ford &mdash; the layout that favours registration &mdash; it does not win, and the manuscript "
                  "says so."},
 
+        {"t": "fig", "src": "figs/ford-sensor-positions.png",
+         "alt": "Top view of published and estimated sensor positions on Ford, with residual vectors",
+         "cap": "The Ford Log4 result drawn in the vehicle frame: circles are published positions, crosses are the GT-free estimates, and the right panel shows the residual vectors, 2.4&ndash;12.0&nbsp;cm. The common lateral translation is not observable from pairwise relative calibration and is aligned to the published centroid for the picture only; the relative lateral errors are unchanged by that alignment."},
+        {"t": "fig", "src": "figs/baseline-pairwise-comparison.png",
+         "alt": "Per-pair relative lateral error for the three methods on A2D2, RadarScenes and Ford",
+         "cap": "The same three methods resolved per sensor pair. The pattern that the table summarises is visible directly: registration is competitive only where the two sensors truly co-observe, and degrades by two to three orders of magnitude on the A2D2 side pairs and on the opposed radar pairs. Note the protocol difference &mdash; this figure averages over sensor <em>pairs</em>, while the table above scores the final per-sensor states against one reference, so the summary numbers printed here are not the table's numbers."},
         {"t": "h", "level": 2, "id": "overlap", "no": "3", "text": "Why registration wins on Ford and fails elsewhere"},
-        {"t": "fig", "src": "../assets/fig05_bev_triptych_v1.png",
-         "alt": "Bird's-eye-view local maps for Ford, A2D2 lateral sensors and RadarScenes pairs",
-         "cap": "Local maps placed in a common frame using ground-truth extrinsics, for visualisation only. Ford's "
-                "360&deg; LiDARs retain broad common structure; the lateral A2D2 sensors and the cross-sensor "
-                "RadarScenes pairs do not."},
+        {"t": "fig", "src": "figs/localmap-covisibility.jpg",
+         "alt": "Bird's-eye local-map pairs coloured by which sensor observed each point",
+         "cap": "Two local maps per panel, placed in a common frame with the published extrinsics and coloured by "
+                "origin: blue and orange are seen by one sensor only, purple by both. Ford's 360&deg; LiDARs keep "
+                "broad common structure, the two A2D2 side units keep almost none, and the opposed radar pair keeps "
+                "none at all. The fractions printed inside the panels are the measured co-visibility tabulated on "
+                "the <a href=\"data-inventory.html#overlap\">inventory page</a>; the manuscript uses only the "
+                "picture."},
         {"t": "p", "text": "This is a qualitative explanation of an input condition, not a numerical overlap metric. "
                            "No overlap number is introduced, because introducing one and then optimising against it "
                            "would make the comparison circular."},
@@ -249,6 +276,9 @@ RESULTS = {
          ],
          "cap": "Five accepted windows on Log4 is a small basis. It is stated rather than pooled away."},
 
+        {"t": "fig", "src": "figs/ford-pair-estimate-vs-gt.png",
+         "alt": "Estimated against published relative lateral offset for twelve directed Ford pairs under two front ends",
+         "cap": "Every directed Ford Log4 pair against the published value, for the two odometry front ends. The spread around the identity line, not the correlation, is the result: the pairs span &plusmn;1&nbsp;m of true offset, so a high correlation here is trivial and only the residual is informative."},
         {"t": "h", "level": 2, "id": "sync", "no": "5", "text": "Ablation: clock offset"},
         {"t": "p", "text": "A constant offset was injected into the timestamps of one A2D2 channel and the whole "
                            "estimation pipeline was rerun. The experiment separates a change in inter-sensor relative "
@@ -276,6 +306,9 @@ RESULTS = {
                  "odometry inconsistency rather than timing granularity alone. See "
                  "<a href='sum-form.html'>B2 &middot; Sum-form relative Y</a>."},
 
+        {"t": "fig", "src": "figs/sync-granularity.png",
+         "alt": "Alignment error against injected clock offset for five estimators, and per-degree-of-freedom response",
+         "cap": "(a) Injected clock offset against relative-lateral error for five estimators on A2D2. The sample-wise and interval-wise baselines degrade monotonically; the segment form is lowest until it refuses the pair outright at 763&nbsp;ms, when no common window survives. (b) Peak-to-peak movement of each output over the same offset grid: for hand-eye every one of the six components moves, while four of ours are numerically unmoved."},
         {"t": "h", "level": 2, "id": "oracle", "no": "6", "text": "Ablation: ground-truth attitude injection"},
         {"t": "p", "text": "A small attitude error perturbs a projected velocity through a first-order cross-axis "
                            "term, while the cosine scaling of the intended component is only second order. If Stage-1 "

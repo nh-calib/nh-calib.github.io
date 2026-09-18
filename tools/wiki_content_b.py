@@ -49,6 +49,12 @@ TIME = {
                  "baselines are given the same aligned inputs. The claim NH-Calib makes is about <em>how many</em> "
                  "degrees of freedom depend on alignment at all, not about being robust to misalignment."},
 
+        {"t": "fig", "src": "figs/rs-iterative-sync-method.png",
+         "alt": "Block diagram of the three-pass alternation between offset estimation and calibration",
+         "cap": "The alternation as it runs on RadarScenes: a straight-motion fit gives mounting yaw, a turn fit gives p<sub>x</sub>, p<sub>x</sub> turns the Doppler lateral velocity into a sensor-side yaw rate, that yaw rate is aligned against the vehicle yaw rate to give the offset, and the reassociated data feeds the next pass. Ground truth enters nowhere in the loop."},
+        {"t": "fig", "src": "figs/rs-sync-diagnostics.png",
+         "alt": "Estimated per-sensor clock offsets, yaw-rate RMSE before and after, the cost curve and one aligned turn",
+         "cap": "Diagnostics from that loop. (a) The four radars land between &minus;116.75 and &minus;112.50&nbsp;ms against the vehicle clock. (b) Yaw-rate RMSE drops for every sensor, most visibly on R2, from 5.3 to 4.5&nbsp;deg/s. (c) The alignment cost is smooth and has a single minimum over the candidate grid, which is why a grid search suffices. (d) One turn before and after the shift."},
         {"t": "h", "level": 2, "id": "assoc", "no": 3, "text": "Segment association"},
         {"t": "p", "text": "Association answers a simple question: which turn in sensor i is the same physical turn as "
                            "which turn in sensor j? It is deliberately conservative &mdash; a wrong pairing is far "
@@ -175,6 +181,9 @@ SUMFORM = {
                  "completely from (B2.4). What remains is a straight line through the origin whose slope is the "
                  "quantity being calibrated. No speed sensor, no map, and no overlapping field of view is involved."},
 
+        {"t": "fig", "src": "figs/sumform-sync-concept.png",
+         "alt": "Two panels contrasting frame-wise differencing with integration over a turn segment",
+         "cap": "Why the quantity is integrated instead of differenced frame by frame. With a residual offset &delta; between two channels, differencing pays an error of roughly the speed derivative times &delta; at <em>every</em> frame (left), while integrating over one segment leaves only the two boundary strips (right). Conceptual illustration; the measured attenuation against a frame-wise control is a factor of 2.9&ndash;5.5 and is reported on the ablation page. It is <em>not</em> a robustness claim against hand-eye."},
         {"t": "h", "level": 2, "id": "regress", "no": 3, "text": "Regression over segments"},
         {"t": "p", "text": "Each associated segment contributes one point (W<sub>k</sub>, "
                            "<span class='sym'>&Delta;</span>I<sub>k</sub>). Collecting them across the drive turns "
@@ -201,6 +210,9 @@ SUMFORM = {
                  "least squares, RANSAC, median &mdash; were compared and the choice of aggregator was not the "
                  "dominant error source."},
 
+        {"t": "fig", "src": "figs/a2d2-sumform-regression.png",
+         "alt": "Bias-corrected integrated distance against integrated yaw for five A2D2 LiDARs, with fit and published value",
+         "cap": "The regression itself on A2D2: one point per accepted segment, the horizontal axis is the integrated yaw W and the vertical axis the bias-corrected integrated distance Z, so the slope is the lateral offset. Solid black is the fit, dashed orange the published value. One long segment near W = 16&nbsp;rad dominates every sensor's fit, which is the visual form of the small-sample limit discussed below. These are per-sensor absolute fits; the reported product is the sensor-to-sensor difference, in which the common bias cancels."},
         {"t": "h", "level": 2, "id": "limit", "no": 4, "text": "What limits the accuracy"},
         {"t": "p", "text": "The estimator consumes odometry, so its accuracy is bounded by how differently the two "
                            "channels' odometry drifts inside a window. Feeding ground-truth trajectories into the same "
@@ -279,6 +291,12 @@ GRAPH = {
                  "that freedom, and it keeps the output consistent with the reference-relative convention used "
                  "everywhere else."},
 
+        {"t": "fig", "src": "figs/a2d2-pair-error-matrix.png",
+         "alt": "Signed and absolute relative lateral error matrices over five A2D2 sensors",
+         "cap": "All 20 directed pairs on A2D2, signed on the left and absolute on the right, in millimetres. The structure is the point: the front-versus-side blocks carry a consistent sign, which is a per-sensor bias reappearing in every pair that contains that sensor &mdash; exactly what the graph averages over."},
+        {"t": "fig", "src": "figs/ford-pair-error-matrix.png",
+         "alt": "Signed relative lateral error matrices for the same Ford pairs under two odometry front ends",
+         "cap": "The same matrix on Ford Log4 under two front ends. Under GICP the Yellow row and column carry a &plusmn;130&nbsp;mm signature that no other pair shows &mdash; one channel's twist is biased and every pair touching it inherits it. Under KISS-ICP the same structure survives at about half the size (worst entry 66&nbsp;mm against 139&nbsp;mm). The graph does not remove such a bias; it only stops one bad pair from being read as a pair-specific result."},
         {"t": "h", "level": 2, "id": "absolute", "no": 3, "text": "Optional metric anchor"},
         {"t": "p", "text": "The graph can be closed against the vehicle frame instead of against a sensor. Wheel "
                            "odometry from the vehicle bus is introduced as a virtual node whose lateral offset is "

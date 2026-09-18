@@ -186,6 +186,9 @@ OBS = {
                  "body; the non-holonomic constraint is a statement about the wheels. Conflating them would make the "
                  "argument circular, because interval-based alternatives are affected by planar motion too."},
 
+        {"t": "fig", "src": "figs/core-idea.png",
+         "alt": "Two-panel derivation of the longitudinal offset from the lever arm and of the lateral offset from arc length",
+         "cap": "The two mechanisms side by side. (a) With no lateral velocity at the rear-axle point, a sensor's own lateral speed in a turn is &omega;&middot;p<sub>x</sub>, so its longitudinal offset follows from its own twist alone. (b) Two sensors on one rigid body share the same instantaneous centre and the same heading change, so their path-length difference over a turn is &minus;&Delta;p<sub>y</sub>&middot;&Delta;&theta;: the vehicle speed cancels, but two sensors are required &mdash; which is why this one component stays coupled."},
         {"t": "h", "level": 2, "id": "one", "no": 3, "text": "Why Y is different"},
         {"t": "p", "text": "The lateral offset appears in the longitudinal velocity relation "
                            "v<sub>j,x</sub> = v<sub>c,x</sub> &minus; &omega;p<sub>y,j</sub>. Unlike the lateral "

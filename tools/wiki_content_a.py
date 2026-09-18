@@ -73,6 +73,9 @@ M1 = {
         ]},
 
         {"t": "h", "level": 2, "id": "detect", "no": 3, "text": "Step 2 &mdash; turn detection"},
+        {"t": "fig", "src": "figs/turn-anatomy.png",
+         "alt": "Yaw rate and integrated heading for one accepted turn in two datasets",
+         "cap": "One accepted segment per dataset, with the three conditions drawn onto the signal. A segment opens only if the peak clears the 15&nbsp;deg/s trigger, stays open while the rate holds above the 5&nbsp;deg/s edge, and is accepted only if the integrated heading reaches 30&nbsp;deg. Left: a truck recording, peak 19.4&nbsp;deg/s, 188&nbsp;deg net over 12.8&nbsp;s. Right: A2D2, peak 20.1&nbsp;deg/s, 949&nbsp;deg net over 55.8&nbsp;s &mdash; a long roundabout that the hold level keeps as one segment instead of shattering into several."},
         {"t": "p", "text": "Detection runs on a single signed scalar per channel, the yaw-centric turn rate."},
         {"t": "eq", "text": "&omega;<sub>turn</sub>(t) = &#8214;<span class='sym'>&omega;</span>(t)&#8214; &middot; sign( &omega;<sub>z</sub>(t) )",
          "cap": "Default <code>norm</code> mode: magnitude from the full three-dimensional angular velocity, sign from "
@@ -108,6 +111,9 @@ M1 = {
          ],
          "cap": "Gate values are per-channel and identical for every sensor in a run."},
 
+        {"t": "fig", "src": "figs/turn-threshold-sweep.png",
+         "alt": "Share of driving time retained as turn segments against the peak trigger level",
+         "cap": "How much of a drive the definition keeps as the trigger is swept, for three net-rotation requirements. A2D2 holds at 22&ndash;23&nbsp;% and is almost insensitive to the trigger; the truck recording falls from 1.9&nbsp;% to 0.4&nbsp;%. The dashed line marks the 15&nbsp;deg/s default used throughout this wiki."},
         {"t": "h", "level": 2, "id": "out", "no": 4, "text": "Outputs"},
         {"t": "table",
          "head": ["Field", "Meaning"],
@@ -168,6 +174,9 @@ M2 = {
                  "four degrees of freedom that NH-Calib estimates without association."},
 
         {"t": "h", "level": 2, "id": "proc", "no": 2, "text": "Procedure"},
+        {"t": "fig", "src": "figs/rollpitch-axis-align.png",
+         "alt": "Three-panel schematic of sign alignment, weighted axis summation and Rodrigues levelling",
+         "cap": "The three steps in one picture: (a) only samples inside accepted turns, with a rate between 15 and 60&nbsp;deg/s, are kept; (b) each sample is sign-aligned against the strongest sample and combined into a single axis by a norm-weighted sum; (c) a Rodrigues rotation about r = a &times; e<sub>z</sub> brings that axis onto +z, and the ZYX Euler read-out of that rotation is the reported Roll and Pitch. Drawn with illustrative values &mdash; it is a schematic of the procedure, not a measurement."},
         {"t": "steps", "items": [
             ["Select informative samples",
              "Keep samples inside accepted turns whose angular-rate magnitude lies between the lower information "
@@ -423,6 +432,9 @@ M3 = {
          "text": "The only cross-sensor coupling in Stage 1 is the shared c through the platform speed channel. "
                  "With c fixed at zero the sensors decouple completely."},
 
+        {"t": "fig", "src": "figs/a2d2-yaw-px-measurements.png",
+         "alt": "Scatter plots of the two regressions behind mounting yaw and longitudinal offset on five A2D2 LiDARs",
+         "cap": "The samples that actually enter the A4 fit, one column per A2D2 LiDAR. Top: levelled lateral against longitudinal velocity in straight motion, whose direction gives mounting yaw &mdash; from +1.24&deg; on the front-centre unit to &minus;93.00&deg; on the side-right unit. Bottom: yaw-aligned lateral speed against yaw rate inside turns, whose slope is p<sub>x</sub> &mdash; 1.64&ndash;1.65&nbsp;m for the three front units and 0.60&nbsp;m for the two side units. Neither panel involves a second sensor."},
         {"t": "h", "level": 2, "id": "solver", "no": 4, "text": "Robust solver"},
         {"t": "table", "cls": "num",
          "head": ["Setting", "Value", "Role"],
