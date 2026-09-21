@@ -1,0 +1,94 @@
+{
+  "dataset": "A2D2",
+  "drive": "20180810_150607",
+  "channel": "FRONT_CENTER",
+  "role": "module 0 - sensor ego-motion (raw stream -> metric twist)",
+  "dt_mode": "fixed",
+  "fps": 30,
+  "n_frames": 300,
+  "duration_s": 10.0,
+  "twist_index_window": [
+    1580,
+    1880
+  ],
+  "window_t_rel_drive_s": [
+    52.666666746139526,
+    62.63333344459534
+  ],
+  "window_t_unix_s": [
+    1533906467.3947248,
+    1533906477.3682036
+  ],
+  "window_duration_s": 9.96666669845581,
+  "scan_index_window": [
+    2691,
+    2990
+  ],
+  "scan_lookup_lag_s": {
+    "median": 0.013666033744812012,
+    "max": 0.022870540618896484
+  },
+  "points_per_frame_raw": {
+    "min": 16637,
+    "median": 20130,
+    "max": 27608
+  },
+  "points_per_frame_in_box": {
+    "min": 13466,
+    "median": 19019,
+    "max": 27599
+  },
+  "max_points_drawn": 14000,
+  "bev_box_m": {
+    "x": [
+      -4.0,
+      50.0
+    ],
+    "y": [
+      -27.685384615384606,
+      27.685384615384606
+    ]
+  },
+  "height_colour_limits_m": [
+    -2.5,
+    6.0
+  ],
+  "speed_mps": {
+    "min": 4.71367517526718,
+    "max": 7.098961307546321,
+    "mean": 5.975169252887204
+  },
+  "yaw_rate_degps": {
+    "min": -23.85304321930816,
+    "max": 1.269689147195306
+  },
+  "net_heading_change_deg": -89.49988145312929,
+  "path_length_m": 59.529557672110315,
+  "path_extent_m": {
+    "x": [
+      0.0,
+      23.142794285383093
+    ],
+    "y": [
+      -43.521366689661214,
+      0.0
+    ]
+  },
+  "sources": {
+    "scan_cache": "/media/ailab-12/3580-E7B41/nh_cache/a2d2_20180810_150607/cam_front_center",
+    "twist_npz": "/home/ailab-12/nh_calib_lidar/a2d2_final_calibration_20260811/a2d2_lidar5_final_twist.npz",
+    "twist_keys": [
+      "FRONT_CENTER__t",
+      "FRONT_CENTER__dt",
+      "FRONT_CENTER__vx",
+      "FRONT_CENTER__vy",
+      "FRONT_CENTER__wz"
+    ]
+  },
+  "commands": {
+    "render": "SMOKE=0 /home/ailab-12/miniforge3/envs/nhcalib/bin/python make_hero_egomotion_real.py",
+    "mp4": "ffmpeg -y -loglevel error -framerate 30 -i /home/ailab-12/hero_egomotion_20260921/frames/f%04d.png -vf scale=1280:-2 -c:v libx264 -pix_fmt yuv420p -crf 30 -preset slow -movflags +faststart /home/ailab-12/hero_egomotion_20260921/out/hero_egomotion_real.mp4",
+    "webm": "ffmpeg -y -loglevel error -framerate 30 -i /home/ailab-12/hero_egomotion_20260921/frames/f%04d.png -vf scale=1280:-2 -c:v libvpx-vp9 -b:v 0 -crf 40 -row-mt 1 /home/ailab-12/hero_egomotion_20260921/out/hero_egomotion_real.webm",
+    "poster": "ffmpeg -y -loglevel error -i /home/ailab-12/hero_egomotion_20260921/frames/f0299.png -vf scale=1280:-2 /home/ailab-12/hero_egomotion_20260921/out/hero_egomotion_real.png"
+  }
+}

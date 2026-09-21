@@ -1,0 +1,31 @@
+{
+  "drive": "A2D2 20180810_150607",
+  "signal": "chassis (CAN) yaw rate on the chassis clock",
+  "drive_length_s": 525.8,
+  "n_segments": 11,
+  "segment_durations_s": [
+    4.82,
+    4.89,
+    5.52,
+    5.63,
+    5.29,
+    5.82,
+    4.3,
+    5.53,
+    3.93,
+    4.0,
+    55.73
+  ],
+  "closeup_index": 4,
+  "closeup_duration_s": 5.29,
+  "closeup_net_deg": -87.0,
+  "gate_levels_dps": {
+    "trigger": 15.0,
+    "edge": 5.0,
+    "net_deg": 30.0
+  },
+  "sources": [
+    "/home/ailab-12/nh_calib_lidar/a2d2_s0d_dump_20260921/s0d_front_center_m3.npz",
+    "/home/ailab-12/hero_real_20260921/hero_segments.npz"
+  ]
+}

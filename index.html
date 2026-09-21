@@ -24,25 +24,6 @@
 
   <main id="top">
 
-    <!-- S0: the claim, on real drive data ---------------------------- -->
-    <figure class="hero hero-real">
-      <video class="hero-media" autoplay muted loop playsinline preload="metadata"
-             poster="assets/hero/hero_real_poster.png"
-             aria-label="One gated turn of an A2D2 drive replayed in bird's-eye view. The ego-motions of two LiDARs draw in time order at different radii while their accumulated path-length difference grows; then every gated turn of the drive contributes a point, and a joint fit settles on the relative lateral offset next to the dataset ground truth.">
-        <source src="assets/hero/hero_real.webm" type="video/webm">
-        <source src="assets/hero/hero_real.mp4" type="video/mp4">
-      </video>
-      <img class="hero-still" src="assets/hero/hero_real_poster.png"
-           alt="Two LiDAR ego-motion paths through one real turn, the per-turn estimates of the relative lateral offset, and a joint fit at 581.7 millimetres against a ground truth of 580.0 millimetres.">
-      <figcaption>
-        A2D2 drive 20180810&#8239;150607, LiDAR <b>FRONT_CENTER</b> (reference) against <b>FRONT_LEFT</b>
-        (target). <i>&Delta;I</i> is the path-length difference between the two ego-motions; the
-        reference-relative offset <i>&Delta;p<sub>y</sub></i> is the slope of the joint fit
-        <i>&Delta;I</i> = <i>&Delta;p<sub>y</sub></i>&#8201;&int;&omega;&#8239;d<i>t</i> + &beta;<i>T</i>
-        over the 11 gated turn segments of that drive &mdash; 581.7&#8239;mm against a dataset ground truth
-        of 580.0&#8239;mm. Same gate as the paper; no segment was picked for this clip.
-      </figcaption>
-    </figure>
 
     <!-- S1 ------------------------------------------------------------ -->
     <section class="paper-header">
@@ -155,11 +136,19 @@
     <section class="text-section" id="abstract">
       <h2>Abstract</h2>
       <p>
-        Extrinsic calibration is difficult when vehicle-mounted sensors share neither a field of view nor a sensing
-        modality. NH-Calib takes metric ego-motion as its only input and uses wheeled-vehicle motion constraints to
-        split the problem by observability: each sensor recovers X, roll, pitch and yaw on its own, and only relative
-        Y is estimated across sensors, from associated turning segments. It is evaluated on LiDAR and radar
-        configurations of A2D2, RadarScenes and Ford Multi-AV, with ground-truth extrinsics used for evaluation only.
+        Multi-sensor fusion requires accurate inter-sensor extrinsic calibration. Calibration-room and
+        motion-based approaches impose different environmental constraints, repeatability, and operational
+        burdens. Wheeled-mobility platforms, however, provide motion dynamics as additional calibration
+        information. We propose NH-Calib (Non-Holonomic Constraint-based Calibration), which applies these
+        dynamics to motion-based calibration and thereby offers greater robustness to temporal-synchronization
+        errors. NH-Calib is applicable to any sensor capable of estimating or measuring its own linear and
+        angular velocities. It independently estimates X, Roll, Pitch, and Yaw for each sensor without temporal
+        synchronization. Under locally planar motion, Roll, Pitch, Yaw, and X are estimated separately for each
+        sensor; excluding Z, which is unobservable, relative Y is the only component requiring inter-sensor
+        association. Relative Y is estimated through a sum-form formulation that differences the longitudinal
+        motion integrated over common turn segments, thereby canceling the common forward-speed component of the
+        mobility platform. We experimentally validate the proposed method on the public A2D2, RadarScenes, and
+        Ford Multi-AV datasets.
       </p>
     </section>
 
@@ -167,17 +156,84 @@
     <section class="content-section" id="method">
       <h2>Method</h2>
       <p class="lead">
-        A common metric-twist interface admits LiDAR or radar odometry, GNSS/INS, and wheel-speed with IMU.
-        The estimator then separates what one sensor can answer alone from what needs a second sensor.
+        Every channel enters through one interface &mdash; a metric twist in its own frame &mdash; and the
+        estimator then splits the six mounting parameters by what each one actually needs. Four fall out of a
+        single sensor&rsquo;s own motion, Z is not excited by driving at all, and only relative Y is carried
+        across sensors.
       </p>
       <figure class="paper-figure">
         <img src="assets/fig02_two_stage_pipeline_module_data_v6.png" alt="Two-stage NH-Calib architecture">
         <figcaption>
-          <b>Stage&#8239;1</b> is sensor-local: turn segments, motion-plane alignment, X and yaw.
-          <b>Stage&#8239;2</b> associates turns across sensors and solves relative Y.
+          <b>Stage&#8239;1</b> is sensor-local: turn segments, motion-plane alignment, X and yaw, then
+          referencing. <b>Stage&#8239;2</b> associates turns across sensors and solves relative Y.
         </figcaption>
       </figure>
-      <!-- S0e: motion-plane alignment, the first thing Stage 1 does -->
+
+      <!-- 1 ------------------------------------------------------------ -->
+      <div class="module" id="m-egomotion">
+        <h3><span class="module-n">1</span> Sensor ego-motion</h3>
+        <p>
+          The estimator never sees points, returns or raw inertial counts. Each channel is reduced by its own
+          front end to a <b>metric twist</b>: linear and angular velocity, in that sensor&rsquo;s frame, on that
+          sensor&rsquo;s clock. LiDAR and radar odometry, GNSS/INS and wheel speed with IMU all produce it, which
+          is why a spinning LiDAR and a 2-D radar can enter the same estimator without a shared field of view or
+          a shared modality.
+        </p>
+      </div>
+      <figure class="hero hero-real hero-stage-ego">
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+               poster="assets/hero/hero_egomotion_real.png"
+               aria-label="Two panels over ten seconds of an A2D2 drive. Left, one raw LiDAR scan per video frame in the sensor's own frame, bird's-eye and coloured by height, with the road corridor streaming past and swinging sideways through a right turn. Right, the ego path integrated from that same sensor's twist, growing one sample per frame with a heading arrow, running straight and then bending ninety degrees; beside it the forward speed and yaw rate that the rest of the estimator consumes.">
+          <source src="assets/hero/hero_egomotion_real.webm" type="video/webm">
+          <source src="assets/hero/hero_egomotion_real.mp4" type="video/mp4">
+        </video>
+        <img class="hero-still" src="assets/hero/hero_egomotion_real.png"
+             alt="The completed ten-second window: the last raw scan in the sensor frame, the 59.5 metre path it produced with an 89.5 degree right turn, and the speed and yaw-rate traces.">
+        <figcaption>
+          A2D2 drive 20180810&#8239;150607, LiDAR <b>FRONT_CENTER</b>, 10&#8239;s taken from the middle of the
+          drive. <i>Left</i>: one cached scan per video frame in the raw sensor frame, about 20,000 points,
+          nothing transformed. <i>Right</i>: the twist the front end produced from that same stream, integrated
+          on its own clock &mdash; 59.5&#8239;m and one 89.5&deg; right turn, with the forward speed running
+          4.7&ndash;7.1&#8239;m/s. No ground truth and no second sensor enters this figure. Everything after this
+          module sees only the two numbers on the right, <i>v</i> and <i>&omega;</i> &mdash; which is what lets a
+          2-D radar or a wheel-speed channel take the same place.
+        </figcaption>
+      </figure>
+
+      <!-- 2 ------------------------------------------------------------ -->
+      <div class="module" id="m-segments">
+        <h3><span class="module-n">2</span> Turn segment extraction</h3>
+        <p>
+          Rotation is the only motion that exposes a mounting offset, so the drive is cut into the intervals
+          that carry it. A segment opens on an angular-rate peak, closes when the rate falls back to the hold
+          level, and is kept only if the heading it accumulates passes the net-rotation level. Straight running
+          is discarded, and every later module consumes these segments rather than raw frames.
+        </p>
+      </div>
+      <figure class="module-figure">
+        <img src="assets/turn_gate_real.png"
+             alt="Left: the yaw rate of a nine-minute A2D2 drive with eleven accepted turn segments shaded and the trigger and hold levels drawn. Right: one segment in close-up, its rate trace crossing the trigger level and its accumulated heading passing the net-rotation level.">
+        <figcaption>
+          A2D2 drive 20180810&#8239;150607, chassis yaw rate. Eleven segments survive out of nine minutes of
+          driving &mdash; the shaded fifth of the record is all the estimator consumes. Unshaded rotations are
+          ones that did not clear the gate or were not matched across the sensor pair. The gate itself runs per
+          sensor on that sensor&rsquo;s own angular rate; the chassis trace is drawn here only because it is the
+          one clock every channel of this drive can be shown against.
+        </figcaption>
+      </figure>
+
+      <!-- 3 ------------------------------------------------------------ -->
+      <div class="module" id="m-rollpitch">
+        <h3><span class="module-n">3</span> Roll and pitch</h3>
+        <p>
+          A turn on a locally planar surface has a single rotation axis &mdash; the plane normal &mdash; and every
+          sensor bolted to the chassis measures that same vector, spread over its own three components according
+          to how it is mounted. Pooling the angular-rate samples of the gated segments gives one representative
+          axis, and the rotation that swings that axis back onto the sensor&rsquo;s vertical <i>is</i> the
+          mounting roll and pitch. Aligning a single vector can settle only two angles, so yaw is left for the
+          next module.
+        </p>
+      </div>
       <figure class="hero hero-concept hero-stage0">
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_rollpitch_static.svg">
@@ -185,48 +241,37 @@
                alt="Three panels. Left, a vehicle driving a circle on a locally planar patch of ground, with the rotation axis drawn along the plane normal. Middle, the same vector seen in the frame of a sensor mounted with a tilt: pooled angular-rate samples from the gated turns cluster around a direction off the sensor's vertical axis and split into an in-plane part and a vertical part. Right, the rotation that swings that direction back onto the sensor's vertical; its roll and pitch are the mounting angles, while a turn about the axis itself changes nothing, so yaw is left open.">
         </picture>
         <figcaption>
-          Schematic, synthetic values, tilt exaggerated. A turn on a locally planar surface has a single
-          rotation axis &mdash; the plane normal &mdash; and every sensor bolted to the chassis measures that
-          same vector, so a sensor mounted with a tilt sees it spread over all three of its own components.
-          Pooling the angular-rate samples from the gated turn segments gives one representative axis
-          direction, and the rotation that brings that direction back onto the sensor's vertical axis
-          <i>is</i> the mounting roll and pitch. Aligning a single vector can only settle two angles: a
-          rotation about the axis itself leaves the axis where it was, so yaw is not determined here. This
-          step needs no target, no shared field of view and no clock shared with another sensor &mdash; only
-          an agreed sign convention for the axis direction.
+          Schematic, synthetic values, tilt exaggerated. The step needs no target, no shared field of view and no
+          clock shared with another sensor &mdash; only an agreed sign convention for the axis direction.
         </figcaption>
       </figure>
 
-      <p class="stage-bridge">
-        Levelling leaves a planar twist stream in the sensor's own frame, and the rest of Stage&#8239;1 reads
-        the two in-plane parameters straight off it:
-      </p>
-
-      <!-- S0c: the Stage-1 mechanism, schematic -->
+      <!-- 4 ------------------------------------------------------------ -->
+      <div class="module" id="m-xyaw">
+        <h3><span class="module-n">4</span> X and yaw</h3>
+        <p>
+          Levelling leaves a planar twist in the sensor&rsquo;s own frame, and the non-holonomic constraint reads
+          the two in-plane parameters straight off it. The vehicle body has no lateral velocity, so a sensor
+          mounted a lever arm <i>p<sub>x</sub></i> ahead of the axle must read exactly
+          <i>&omega;&#8201;p<sub>x</sub></i> sideways; under straight running, where <i>&omega;</i> vanishes,
+          whatever lateral reading survives is the sensor&rsquo;s own yaw offset <i>&psi;</i>. The residual
+          <i>r</i> = sin&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> +
+          cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i> &minus; <i>&omega;&#8201;p<sub>x</sub></i> is
+          driven to zero over the gated segments, with a shared slip coefficient absorbing the speed-dependent
+          departure from the ideal line.
+        </p>
+      </div>
       <figure class="hero hero-concept hero-stage1">
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_pxyaw_static.svg">
           <img src="assets/hero/hero_pxyaw.svg"
                alt="Two panels. Left, a vehicle running straight: the axle point has no lateral velocity, so the sensor's lateral reading is its own yaw misalignment, drawn as the velocity resolved on the sensor's rotated axes. Right, the same vehicle in a steady turn about an instantaneous centre of rotation, where the sensor gains a lateral velocity equal to the turn rate times its longitudinal lever arm. Below, lateral velocity plotted against turn rate: straight frames on the origin, turning frames on a line whose slope is the lever arm.">
         </picture>
-        <figcaption>
-          Schematic, synthetic values, offsets exaggerated. Non-holonomic motion leaves the vehicle body with
-          no lateral velocity, so a sensor mounted a lever arm <i>p<sub>x</sub></i> ahead of the axle must read
-          exactly <i>&omega;&#8201;p<sub>x</sub></i> sideways &mdash; and under straight running, where
-          <i>&omega;</i> vanishes, whatever lateral reading survives is the sensor's own yaw offset
-          <i>&psi;</i>. That is the whole of Stage&#8239;1: the residual
-          <i>r</i> = sin&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> +
-          cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i> &minus;
-          <i>&omega;&#8201;p<sub>x</sub></i> is driven to zero over the gated turn segments, with a shared slip
-          coefficient absorbing the speed-dependent departure from the ideal line. One sensor, no target and
-          no shared field of view.
-        </figcaption>
+        <figcaption>Schematic, synthetic values, offsets exaggerated.</figcaption>
       </figure>
-
-      <!-- S0d: the same Stage-1 mechanism, replayed on real A2D2 data -->
       <p class="stage-bridge">
-        The same mechanism on the real drive. Nothing below is drawn by hand: the cloud is what
-        Stage&#8239;1 actually consumed, and the moving line is the same robust fit the estimator runs.
+        The same module on the real drive &mdash; the cloud is what it actually consumed, and the moving line is
+        the same robust fit:
       </p>
       <figure class="hero hero-real hero-stage1-real">
         <video class="hero-media" autoplay muted loop playsinline preload="metadata"
@@ -238,24 +283,51 @@
         <img class="hero-still" src="assets/hero/hero_pxyaw_real.png"
              alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, and a fitted lever arm of 1.668 metres against a ground truth of 1.711 metres.">
         <figcaption>
-          A2D2 drive 20180810&#8239;150607, LiDAR <b>FRONT_CENTER</b> alone &mdash; no second sensor enters this
-          figure. Rearranging the Stage&#8239;1 residual gives
-          <i>&#7805;</i><sub>lat</sub> + <i>v<sub>c</sub></i>&#8201;tan(<i>c&#8201;v<sub>c</sub>&omega;</i>) =
-          <i>p<sub>x</sub>&#8201;&omega;</i>, so the through-origin slope of the right-hand cloud
-          <em>is</em> the lever arm: 1.668&#8239;m over 697 gated samples from 11 turns, against a dataset ground
-          truth of 1.711&#8239;m, with <i>&psi;</i> = 1.230&deg; against 1.225&deg;. Absolute
-          <i>p<sub>x</sub></i> carries the slip-coefficient bias, which is why the paper reports the
-          reference-relative figure (8.8&#8239;mm over four targets); the shaded band is the
-          |<i>&omega;</i>|&#8239;&ge;&#8239;5&#8239;deg/s turn gate.
+          A2D2 <b>FRONT_CENTER</b> alone &mdash; no second sensor enters this figure. Rearranged, the residual
+          gives <i>&#7805;</i><sub>lat</sub> + <i>v<sub>c</sub></i>&#8201;tan(<i>c&#8201;v<sub>c</sub>&omega;</i>) =
+          <i>p<sub>x</sub>&#8201;&omega;</i>, so the through-origin slope <em>is</em> the lever arm:
+          1.668&#8239;m over 697 gated samples from 11 turns against a ground truth of 1.711&#8239;m, with
+          <i>&psi;</i> = 1.230&deg; against 1.225&deg;. The shaded band is the
+          |<i>&omega;</i>|&#8239;&ge;&#8239;5&#8239;deg/s gate.
         </figcaption>
       </figure>
 
-      <!-- S0d: the Stage-2 mechanism, same schematic treatment as the Stage-1 panel above -->
-      <p class="stage-bridge">
-        <b>Stage&#8239;2</b> takes the pair. Each sensor now reports its own motion in the vehicle frame, and the
-        one thing a single sensor cannot see &mdash; how far apart the two are across the vehicle &mdash; falls out
-        of the same turns:
-      </p>
+      <!-- 5 ------------------------------------------------------------ -->
+      <div class="module" id="m-commonmode">
+        <h3><span class="module-n">5</span> Common-mode elimination</h3>
+        <p>
+          Stage&#8239;1 closes by expressing every sensor against one reference channel. The absolute numbers
+          carry whatever the vehicle frame and the slip term got wrong, and that error is largely shared: on A2D2
+          all five sensors miss <i>p<sub>x</sub></i> by roughly the same &minus;58&#8239;mm, so the difference
+          against the reference is clean where the absolute value is not. It is also a diagnostic &mdash; where
+          the absolute error is not shared, referencing buys nothing, and that is exactly what Ford shows.
+        </p>
+      </div>
+      <figure class="module-figure">
+        <img src="assets/common_mode_real.png"
+             alt="Left: the absolute longitudinal-offset error of all five A2D2 sensors, clustered in a narrow band around minus 58 millimetres rather than around zero. Right: absolute against reference-relative X error for A2D2, RadarScenes and Ford, where the first two collapse to about 11 millimetres and Ford barely moves.">
+        <figcaption>
+          Published NH-Calib numbers, nothing recomputed. The shared component is what referencing removes: A2D2
+          58.3&#8239;&rarr;&#8239;10.9&#8239;mm and RadarScenes 219.9&#8239;&rarr;&#8239;11.1&#8239;mm. Ford goes
+          47.9&#8239;&rarr;&#8239;45.4&#8239;mm, because there the absolute error is not a common offset &mdash;
+          the same operation that rescues two datasets leaves the third where it was.
+        </figcaption>
+      </figure>
+
+      <!-- 6 ------------------------------------------------------------ -->
+      <div class="module" id="m-relativey">
+        <h3><span class="module-n">6</span> Relative Y</h3>
+        <p>
+          Lateral separation is the one thing a single sensor cannot see: it never appears in that
+          sensor&rsquo;s own twist, only in the difference between two of them. Two sensors on one chassis sweep
+          the same turn about a shared instantaneous centre of rotation at different radii, and that radius
+          difference <i>is</i> <i>&Delta;p<sub>y</sub></i>. Integrating each sensor&rsquo;s forward motion over a
+          common window cancels the unknown vehicle speed and leaves
+          <i>&Delta;I</i> = <i>&Delta;p<sub>y</sub></i>&#8201;&int;<i>&omega;</i>&#8239;d<i>t</i> +
+          <i>&beta;T</i>, one scalar per segment rather than one per frame &mdash; which is why alignment error
+          is spent on this parameter alone. Pairwise estimates are then fused by robust weighted least squares.
+        </p>
+      </div>
       <figure class="hero hero-concept hero-stage2">
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_concept_static.svg">
@@ -263,18 +335,33 @@
                alt="Two panels, a left turn and a right turn. In each, a reference sensor and a target sensor trace arcs of different radius about a shared instantaneous centre of rotation, and a bar below shows their accumulated path-length difference growing and reversing sign between the two turns.">
         </picture>
         <figcaption>
-          Schematic, synthetic values. Two sensors bolted to one chassis sweep the same turn about a shared
-          instantaneous centre of rotation (ICR) at different radii. That radius
-          difference <i>is</i> the lateral mounting offset <i>&Delta;p<sub>y</sub></i>, and the accumulated
-          path-length difference <i>&Delta;I</i> carries its sign with the turn direction. No target, no shared
-          field of view and no point correspondence enters the construction.
+          Schematic, synthetic values. The accumulated path-length difference <i>&Delta;I</i> carries its sign
+          with the turn direction. No target, no shared field of view and no point correspondence enters the
+          construction.
         </figcaption>
       </figure>
-
       <p class="stage-bridge">
-        The same mechanism on the real drive. The car runs the whole A2D2 sequence, and every time a gated
-        turn closes it drops one point &mdash; that turn&rsquo;s own path-length difference divided by its own
-        integrated yaw. The joint fit is re-solved from the turns closed so far:
+        One real turn, close up: the two ego-motions drawn in time order at their own radii, and the gap opening
+        between them.
+      </p>
+      <figure class="hero hero-real hero-stage2-real">
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+               poster="assets/hero/hero_real_poster.png"
+               aria-label="One gated turn of an A2D2 drive replayed in bird's-eye view. The ego-motions of two LiDARs draw in time order at different radii while their accumulated path-length difference grows; then every gated turn of the drive contributes a point, and a joint fit settles on the relative lateral offset next to the dataset ground truth.">
+          <source src="assets/hero/hero_real.webm" type="video/webm">
+          <source src="assets/hero/hero_real.mp4" type="video/mp4">
+        </video>
+        <img class="hero-still" src="assets/hero/hero_real_poster.png"
+             alt="Two LiDAR ego-motion paths through one real turn, the per-turn estimates of the relative lateral offset, and a joint fit at 581.7 millimetres against a ground truth of 580.0 millimetres.">
+        <figcaption>
+          A2D2 drive 20180810&#8239;150607, reference <b>FRONT_CENTER</b> against target <b>FRONT_LEFT</b>. The
+          joint fit over the 11 gated segments of the drive lands at 581.7&#8239;mm against a dataset ground truth
+          of 580.0&#8239;mm. Same gate as the paper; no segment was picked for this clip.
+        </figcaption>
+      </figure>
+      <p class="stage-bridge">
+        And in drive order: the car runs the whole sequence, and every time a gated turn closes it drops one
+        point &mdash; that turn&rsquo;s own path-length difference divided by its own integrated yaw.
       </p>
       <figure class="hero hero-real hero-stage2-real">
         <video class="hero-media" autoplay muted loop playsinline preload="metadata"
@@ -286,32 +373,15 @@
         <img class="hero-still" src="assets/hero/hero_py_real.png"
              alt="The completed A2D2 run: eleven gated turns along the drive, one point each, and a joint fit of 581.7 millimetres against a ground truth of 580.0 millimetres.">
         <figcaption>
-          A2D2 drive 20180810&#8239;150607, reference <b>FRONT_CENTER</b> &rarr; target <b>FRONT_LEFT</b>. Each
-          point is one gated turn on its own: <i>&Delta;I</i>&#8239;/&#8239;&int;<i>&omega;</i>&#8239;d<i>t</i>,
-          scattering over roughly 36&#8239;mm from turn to turn. The joint fit solves
-          <i>&Delta;I</i> = <i>&Delta;p<sub>y</sub></i>&#8201;&int;<i>&omega;</i>&#8239;d<i>t</i> +
-          <i>&beta;T</i> over all closed segments &mdash; so it is not the average of the points &mdash; and
-          lands at 581.7&#8239;mm against a dataset ground truth of 580.0&#8239;mm, i.e. +1.7&#8239;mm over
-          11 segments (standard error 2.8&#8239;mm). The open marker is one 56&#8239;s window carrying
-          16.5&#8239;rad of yaw; the estimator down-weights it as |<i>W<sub>k</sub></i>|<sup>&minus;1.5</sup>.
+          Each point is one gated turn on its own,
+          <i>&Delta;I</i>&#8239;/&#8239;&int;<i>&omega;</i>&#8239;d<i>t</i>, scattering over roughly 36&#8239;mm
+          from turn to turn. The joint fit is not their average: it solves
+          <i>&Delta;I</i> = <i>&Delta;p<sub>y</sub></i>&#8201;&int;<i>&omega;</i>&#8239;d<i>t</i> + <i>&beta;T</i>
+          over all closed segments and lands +1.7&#8239;mm from ground truth over 11 segments (standard error
+          2.8&#8239;mm). The open marker is one 56&#8239;s window carrying 16.5&#8239;rad of yaw; the estimator
+          down-weights it as |<i>W<sub>k</sub></i>|<sup>&minus;1.5</sup>.
         </figcaption>
       </figure>
-
-      <ul class="method-points">
-        <li>
-          <b>Turn segments are the unit of work.</b> Angular-rate gates select the intervals that carry rotation,
-          and everything downstream consumes those segments rather than raw frames.
-        </li>
-        <li>
-          <b>Stage&#8239;1 needs no second sensor.</b> The dominant rotation axis levels the sensor into the motion
-          plane, and the non-holonomic lever-arm relation then fixes X and yaw against the vehicle frame.
-        </li>
-        <li>
-          <b>Stage&#8239;2 spends alignment on one parameter.</b> Integrating a common window cancels the unknown
-          common forward motion; the remaining path-length difference is linear in heading change and relative Y,
-          and pairwise estimates are fused by robust weighted least squares.
-        </li>
-      </ul>
 
       <aside class="wiki-callout">
         <p class="callout-kicker">The detailed algorithm description lives in the wiki</p>

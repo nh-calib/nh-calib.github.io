@@ -286,6 +286,7 @@ footer {
 
 /* The two stage schematics sit inside the Method section rather than at the top
    of the page, so they need bottom spacing the page-top hero gets from its neighbour */
+.hero-stage-ego,
 .hero-stage0,
 .hero-stage1,
 .hero-stage1-real,
@@ -295,7 +296,9 @@ footer {
 /* the real-data Stage-1 replay is a 20:9 render, not the 16:9 the other heroes use;
    without its own ratio the frame letterboxes into wide grey bands */
 .hero-stage1-real .hero-media,
-.hero-stage1-real .hero-still { aspect-ratio: 20 / 9; }
+.hero-stage1-real .hero-still,
+.hero-stage-ego .hero-media,
+.hero-stage-ego .hero-still { aspect-ratio: 20 / 9; }
 
 .hero-concept img {
   display: block;
@@ -351,3 +354,47 @@ footer {
   .hero { margin-top: 22px; }
   .hero figcaption { font-size: 12.5px; }
 }
+
+/* --- S4 method modules ----------------------------------------------- */
+/* Method is read module by module: a numbered heading, a short paragraph that
+   states what the module does, then the figure that shows it.  The heading and
+   text stay in the 820 px measure; the figures keep the wider hero column. */
+.module {
+  max-width: 820px;
+  margin: 44px 0 0;
+}
+
+.module h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 13px;
+  margin: 0 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.module-n {
+  flex: 0 0 27px;
+  align-self: center;
+  height: 27px;
+  line-height: 25px;
+  text-align: center;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.module p { margin: 0; color: #333; font-size: 16px; }
+
+/* static module figures (matplotlib renders) sit in the same column as the
+   animated heroes so the section keeps one rhythm */
+.module-figure {
+  max-width: 1040px;
+  margin: 20px auto 34px;
+}
+
+.module-figure img { width: 100%; }
