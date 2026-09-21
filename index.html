@@ -319,7 +319,7 @@
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_pxyaw_static.svg">
           <img src="assets/hero/hero_pxyaw.svg"
-               alt="Two panels. Left, a vehicle running straight: the axle point has no lateral velocity, so the sensor's lateral reading is its own yaw misalignment, drawn as the velocity resolved on the sensor's rotated axes. Right, the same vehicle in a steady turn about an instantaneous centre of rotation, where the sensor gains a lateral velocity equal to the turn rate times its longitudinal lever arm. Below, lateral velocity plotted against turn rate: straight frames on the origin, turning frames on a line whose slope is the lever arm.">
+               alt="Two panels. Left, a vehicle moves forward through a gentle turn: longitudinal motion makes mounting yaw observable, while curvature couples yaw and longitudinal lever arm. Right, the same vehicle turns steadily about an instantaneous centre of rotation, where the sensor gains lateral velocity equal to turn rate times its longitudinal lever arm. Below, the near-zero turn-rate band is excluded and accepted turns jointly constrain yaw and lever arm.">
         </picture>
         <figcaption>Schematic, synthetic values, offsets exaggerated.</figcaption>
       </figure>

@@ -20,12 +20,11 @@ M1 = {
     ],
     "blocks": [
         {"t": "h", "level": 2, "id": "why", "no": 1, "text": "Why segments at all"},
-        {"t": "p", "text": "NH-Calib never uses the whole drive. Straight driving carries almost no "
-                           "information about mounting angles or lever arms: the rotation axis is undefined when "
-                           "<span class='sym'>&omega;</span> &asymp; 0, and the lateral lever-arm term "
-                           "<span class='sym'>&omega;p<sub>x</sub></span> vanishes with it. Every NH-Calib observation "
-                           "equation is proportional to rotation, so the estimator is restricted to intervals that "
-                           "actually rotate."},
+        {"t": "p", "text": "NH-Calib never uses the whole drive. Forward speed can constrain mounting yaw even "
+                           "near straight motion, but it cannot excite the longitudinal lever-arm term "
+                           "<span class='sym'>&omega;p<sub>x</sub></span>. The reported joint yaw-and-X estimator "
+                           "therefore uses accepted turns, where nonzero forward speed supplies the yaw lever and "
+                           "different curvatures separate yaw from X."},
         {"t": "p", "text": "Using a <em>shared</em> segment list also keeps the modules comparable. A2 fits a rotation "
                            "axis, A4 fits a lateral residual and B2 integrates forward displacement &mdash; if each "
                            "re-detected its own intervals, a disagreement between modules could not be traced to a "
@@ -434,7 +433,7 @@ M3 = {
 
         {"t": "fig", "src": "figs/a2d2-yaw-px-measurements.png",
          "alt": "Scatter plots of the two regressions behind mounting yaw and longitudinal offset on five A2D2 LiDARs",
-         "cap": "The samples that actually enter the A4 fit, one column per A2D2 LiDAR. Top: levelled lateral against longitudinal velocity in straight motion, whose direction gives mounting yaw &mdash; from +1.24&deg; on the front-centre unit to &minus;93.00&deg; on the side-right unit. Bottom: yaw-aligned lateral speed against yaw rate inside turns, whose slope is p<sub>x</sub> &mdash; 1.64&ndash;1.65&nbsp;m for the three front units and 0.60&nbsp;m for the two side units. Neither panel involves a second sensor."},
+         "cap": "The samples that actually enter the A4 fit, one column per A2D2 LiDAR. Forward velocity supplies the yaw lever, while each accepted turn couples yaw and X differently; their joint residual gives mounting yaw from +1.24&deg; on the front-centre unit to &minus;93.00&deg; on the side-right unit and X of 1.64&ndash;1.65&nbsp;m for the three front units and 0.60&nbsp;m for the two side units. Neither panel involves a second sensor."},
         {"t": "h", "level": 2, "id": "solver", "no": 4, "text": "Robust solver"},
         {"t": "table", "cls": "num",
          "head": ["Setting", "Value", "Role"],

@@ -10,10 +10,9 @@ The mechanism the figure has to carry:
     non-holonomic constraint,
   * therefore a sensor mounted a lever arm p_x ahead of it sees a lateral
     velocity equal to omega * p_x, and nothing else,
-  * under straight running omega vanishes, so any lateral reading left over is
-    the sensor's own yaw offset psi,
-  * plotted against omega, every frame lands on one line through the origin:
-    the slope is p_x and the origin is what pins psi.
+  * forward motion makes yaw observable, while turn rate couples yaw and p_x,
+  * each accepted curvature contributes a different constraint in (psi, p_x),
+    and their intersection identifies both parameters.
 
 Same construction rules as make_hero_concept.py:
   * no JavaScript -- SMIL only
@@ -53,14 +52,17 @@ T_TRAVEL = 0.44       # fraction of the loop the vehicle is moving
 LEVER = 150.0         # p_x, axle centre -> sensor, exaggerated
 V_AXLE = 86.0         # length of the axle-point velocity arrow
 V_SENS = 110.0        # length of the sensor longitudinal component
-PSI_DEG = 30.0        # yaw offset drawn in the straight-run panel, exaggerated
+PSI_DEG = 30.0        # yaw offset drawn in the forward-motion panel, exaggerated
 BRACKET_Y = 56.0      # p_x bracket sits below the body in both panels
 
-# --- panel A: straight run ---------------------------------------------
+# --- panel A: forward motion during a gentle turn ----------------------
 PA_X, PB_X = 60, 810
 PANEL_Y, PANEL_W, PANEL_H = 104, 730, 530
 PA_ROAD_Y = 400.0
 PA_START, PA_END = 150.0, 430.0
+PA_R = 950.0
+PA_SWEEP = 10.0
+PA_ICR = (340.0, PA_ROAD_Y - PA_R)
 
 # --- panel B: steady left turn -----------------------------------------
 PB_R = 300.0          # turn radius of the axle point
@@ -154,8 +156,8 @@ def body_and_bracket() -> str:
     )
 
 
-def assembly_straight() -> str:
-    """Straight running: the sensor reading splits along its own misaligned axes."""
+def assembly_forward() -> str:
+    """Forward motion: the sensor reading splits along its misaligned axes."""
     psi = math.radians(PSI_DEG)
     sx, sy = math.cos(psi), -math.sin(psi)            # sensor x axis, screen
     bx = LEVER + V_SENS * math.cos(psi) * sx
@@ -213,32 +215,35 @@ PA_LABELS = (
 def panel_a(animated: bool) -> str:
     out = frame(
         PA_X,
-        "Straight run",
-        "&#969; = 0",
+        "Forward motion in a turn",
+        "v&#8339; &#8800; 0",
         (
-            "&#969; is absent, so the lever-arm term is silent.",
-            "A lateral reading can then only be the yaw offset.",
+            "Forward speed makes the yaw offset observable.",
+            "Each accepted curvature couples &#968; and X differently.",
         ),
     )
-    out += (
-        f'<line x1="{PA_X + 50}" y1="{fmt(PA_ROAD_Y)}" x2="{PA_X + PANEL_W - 40}" y2="{fmt(PA_ROAD_Y)}" '
-        f'class="road"/>'
-    )
-    inner = assembly_straight() + "".join(
+    road = arc_path(PA_ICR, PA_R, True, -PA_SWEEP, PA_SWEEP)
+    trail = arc_path(PA_ICR, PA_R, True, -PA_SWEEP, PA_SWEEP)
+    out += f'<path d="{road}" class="road"/>'
+    inner = assembly_forward() + "".join(
         sym(lx, ly, main, sub, cls, dx) for lx, ly, main, sub, cls, dx in PA_LABELS
     )
     if animated:
         out += (
-            f'<g opacity="0">'
-            f'<animateTransform attributeName="transform" type="translate" '
-            f'values="{fmt(PA_START)},{fmt(PA_ROAD_Y)};{fmt(PA_END)},{fmt(PA_ROAD_Y)}" '
-            f'dur="{LOOP}s" calcMode="linear" repeatCount="indefinite"/>'
+            f'<path d="{trail}" class="trace" pathLength="1000" stroke-dasharray="1000" '
+            f'stroke-dashoffset="1000"><animate attributeName="stroke-dashoffset" values="1000;0;0" '
+            f'keyTimes="0;{T_TRAVEL};1" dur="{LOOP}s" calcMode="linear" repeatCount="indefinite"/></path>'
+            f'<g opacity="0"><animateMotion dur="{LOOP}s" repeatCount="indefinite" rotate="auto" '
+            f'calcMode="linear" keyPoints="0;1;1" keyTimes="0;{T_TRAVEL};1">'
+            f'<mpath href="#paTrail" xlink:href="#paTrail"/></animateMotion>'
             f'<animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.88;1" '
             f'dur="{LOOP}s" calcMode="linear" repeatCount="indefinite"/>'
             f"{inner}</g>"
         )
     else:
-        out += f'<g transform="translate({fmt(PA_END)},{fmt(PA_ROAD_Y)})">{inner}</g>'
+        out += f'<path d="{trail}" class="trace"/>'
+        ox, oy, hd = arc_O(PA_ICR, PA_R, True, PA_SWEEP)
+        out += f'<g transform="translate({fmt(ox)},{fmt(oy)}) rotate({fmt(hd)})">{inner}</g>'
     return out
 
 
@@ -332,8 +337,8 @@ def strip(animated: bool) -> str:
         + f'<path d="{line_d}" class="fit" id="fitLine"/>'
         + f'<circle cx="{fmt(x0 + 10)}" cy="{fmt(oy + PLOT_RISE - 2.7)}" r="9" class="acc-open"/>'
         + text(x0 + 22, oy + PLOT_RISE + 34, "opposite turn", "lbl")
-        + f'<circle cx="{fmt(ox)}" cy="{fmt(oy)}" r="8" class="ink-fill"/>'
-        + text(ox + 16, oy + 34, "straight frames", "lbl")
+        + f'<rect x="{fmt(ox - 28)}" y="{fmt(oy - 78)}" width="56" height="156" class="gate-band"/>'
+        + text(ox + 16, oy + 34, "gated band", "lbl")
         + text(x1 - 6, ST_Y + 30, "turning frames", "lbl", "end")
     )
     dot = '<circle cx="0" cy="0" r="10" class="acc-fill"/>'
@@ -348,8 +353,8 @@ def strip(animated: bool) -> str:
     for i, line in enumerate(
         (
             "The slope of that line is the lever arm.",
-            "The rotation that puts the straight-run",
-            "frames on the origin is the yaw offset.",
+            "Forward speed supplies the yaw lever; different",
+            "curvatures intersect in the (&#968;, X) space.",
         )
     ):
         out += text(1500, 730 + 38 * i, line, "note", "end")
@@ -369,6 +374,7 @@ STYLE = f"""
     .ink-dash {{ fill: none; stroke: {MUTED}; stroke-width: 1.8; stroke-dasharray: 8 7; }}
     .axis-dash {{ fill: none; stroke: {ACC}; stroke-width: 1.8; stroke-dasharray: 8 7; opacity: .75; }}
     .fit {{ fill: none; stroke: {MUTED}; stroke-width: 2.6; }}
+    .gate-band {{ fill: {RULE}; opacity: .45; }}
     .bracket {{ fill: none; stroke: {INK}; stroke-width: 2.2; }}
     .axle {{ fill: none; stroke: {INK}; stroke-width: 6; stroke-linecap: round; }}
     .v-ink {{ fill: none; stroke: {INK}; stroke-width: 4; }}
@@ -399,14 +405,13 @@ RIBBON_2 = ("One sensor, one scalar per frame &#8212; no target, no shared field
 
 TITLE = "How one sensor reads its own lever arm and yaw offset out of vehicle motion"
 DESC = (
-    "Schematic. Left panel: a vehicle running straight. The axle point has no lateral "
-    "velocity, and because the turn rate vanishes the sensor's lateral reading can only come "
-    "from its own yaw misalignment, drawn as the sensor's velocity resolved on its rotated "
-    "axes. Right panel: the same vehicle in a steady turn about an instantaneous centre of "
+    "Schematic. Left panel: a vehicle moving forward through a gentle turn. Forward speed "
+    "makes yaw observable, while each accepted curvature couples yaw and longitudinal lever "
+    "arm differently. Right panel: the same vehicle in a steady turn about an instantaneous centre of "
     "rotation. The axle point is still lateral-free, while the sensor, mounted a lever arm "
     "ahead of it, gains a lateral velocity equal to the turn rate times that lever arm. A "
-    "readout below plots lateral velocity against turn rate: straight frames land on the "
-    "origin and turning frames on a line whose slope is the lever arm. No numbers with units "
+    "readout below plots lateral velocity against turn rate: the near-zero turn-rate band is "
+    "gated out and accepted turns constrain yaw and lever arm jointly. No numbers with units "
     "appear; the figure is a mechanism sketch, not a measurement."
 )
 
@@ -423,6 +428,9 @@ def build(animated: bool) -> str:
         f'<g id="asmTurn">{assembly_turn()}</g>',
     ]
     if animated:
+        defs.append(
+            f'<path id="paTrail" d="{arc_path(PA_ICR, PA_R, True, -PA_SWEEP, PA_SWEEP)}" class="mp"/>'
+        )
         defs.append(
             f'<path id="pbTrail" d="{arc_path(PB_ICR, PB_R, True, -PB_SWEEP, 0.0)}" class="mp"/>'
         )
@@ -450,11 +458,11 @@ def build(animated: bool) -> str:
 
 UNIT_RE = re.compile(r"\d\s*(mm|cm|m|deg|rad|s|Hz|m/s)\b")
 REQUIRED = (
-    "Straight run",
+    "Forward motion in a turn",
     "Steady turn",
     "ICR",
     "One line, two unknowns",
-    "straight frames",
+    "gated band",
     "opposite turn",
 )
 

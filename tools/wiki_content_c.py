@@ -156,7 +156,7 @@ OBS = {
               "No", "None", "<a href='m2-roll-pitch.html'>A2</a>"],
              ["Pitch <span class='sym'>&theta;</span>", "Same axis, second Euler component",
               "No", "None", "<a href='m2-roll-pitch.html'>A2</a>"],
-             ["Yaw <span class='sym'>&psi;</span>", "Rotation bringing the sensor's lateral velocity onto the platform axis",
+             ["Yaw <span class='sym'>&psi;</span>", "Forward-velocity projection inside the joint yaw-and-X residual",
               "No", "None", "<a href='m3-x-yaw.html'>A4</a>"],
              ["X (p<sub>x</sub>)", "Lateral velocity induced by yaw rotation, v<sub>y</sub> = &omega;p<sub>x</sub>",
               "No", "None, when the sensor's own angular rate is used",
@@ -177,9 +177,9 @@ OBS = {
             "<strong>Planar motion.</strong> Within a segment the platform rotates about one axis. A sensor measuring "
             "its own angular velocity therefore measures the plane normal in its own frame, which fixes two rotational "
             "degrees of freedom &mdash; roll and pitch &mdash; up to a sign.",
-            "<strong>The non-holonomic constraint.</strong> The rear-axle centre has no lateral velocity, so any "
-            "lateral velocity a sensor measures during a turn is its own longitudinal lever arm. This fixes yaw and "
-            "the longitudinal offset from the same residual.",
+            "<strong>The non-holonomic constraint.</strong> The rear-axle centre has no lateral velocity. Forward "
+            "motion supplies the yaw lever, while turn rate makes the sensor's longitudinal lever arm appear as "
+            "lateral velocity. Different curvatures separate yaw and X within the same residual.",
         ]},
         {"t": "note", "kind": "key",
          "text": "These are two independent assumptions, not one. Planar motion is a statement about the road and the "
