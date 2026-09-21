@@ -291,6 +291,7 @@ footer {
 /* The two stage schematics sit inside the Method section rather than at the top
    of the page, so they need bottom spacing the page-top hero gets from its neighbour */
 .hero-stage-ego,
+.hero-frontends,
 .hero-stage0,
 .hero-stage1,
 .hero-stage1-real,
@@ -303,6 +304,11 @@ footer {
 .hero-stage1-real .hero-still,
 .hero-stage-ego .hero-media,
 .hero-stage-ego .hero-still { aspect-ratio: 20 / 9; }
+
+/* the four-front-end replay is rendered 1920x1425, close to 4:3; the 20:9 rule
+   above would crop its bottom strip away */
+.hero-frontends .hero-media,
+.hero-frontends .hero-still { aspect-ratio: 1920 / 1425; }
 
 .hero-concept img {
   display: block;

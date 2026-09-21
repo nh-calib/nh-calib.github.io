@@ -38,9 +38,9 @@ FG, MUT, GRID = "#10151d", "#475569", "#d8dee7"
 C_LIDAR, C_INS, C_RADAR, C_CAN = "#2563eb", "#475569", "#dc2626", "#0f766e"
 BADGE_PAPER = "#1d4ed8"
 BADGE_SAME = "#0f766e"
-COL_L, COL_R = 0.487, 0.963      # right edge of each grid column
+COL_L, COL_R = 0.487, 0.935      # right edge of each grid column
 COL_LX, COL_RX = 0.058, 0.545    # left edge of each grid column
-COL_CL, COL_CR = 0.2725, 0.754   # centre of each grid column
+COL_CL, COL_CR = 0.2725, 0.740   # centre of each grid column
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans",
@@ -148,7 +148,7 @@ def main():
     # ---------------------------------------------------------------- canvas
     fig = plt.figure(figsize=(12.8, 9.5), dpi=150)
     gs = fig.add_gridspec(2, 1, height_ratios=[1.44, 1.0],
-                          top=0.858, bottom=0.088, left=0.058, right=0.963,
+                          top=0.858, bottom=0.088, left=0.058, right=0.935,
                           hspace=0.30)
     top = gs[0].subgridspec(2, 2, wspace=0.23, hspace=0.95)
     bot = gs[1].subgridspec(2, 2, wspace=0.13, hspace=0.12)

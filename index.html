@@ -212,6 +212,22 @@
           radar gives <i>v</i> but not <i>&omega;</i>, so RadarScenes takes its yaw rate from CAN.
         </figcaption>
       </figure>
+      <figure class="hero hero-real hero-frontends">
+        <video class="hero-media" autoplay muted loop playsinline preload="none"
+               poster="assets/hero/hero_frontends_real.png"
+               aria-label="The same four panels animated over the twenty second window. A cursor walks left to right along the strip at the bottom while the LiDAR panel steps through consecutive Ford scans, the radar panel steps through consecutive RadarScenes scans with the Doppler fit re-solved each time, the INS path fills in, and the CAN panel slides a three second view of the bus signals.">
+          <source src="assets/hero/hero_frontends_real.webm" type="video/webm">
+          <source src="assets/hero/hero_frontends_real.mp4" type="video/mp4">
+        </video>
+        <img class="hero-still" src="assets/hero/hero_frontends_real.png"
+             alt="The last frame of the animation: both twist rows filled to the end of the window, the INS path complete after a 129 degree turn.">
+        <figcaption>
+          The same windows played through, 240 frames over 20&#8239;s. The top panels step through the actual
+          scans &mdash; 183 Ford LiDAR frames and 269 RadarScenes radar scans &mdash; and the Doppler fit is
+          re-solved on every one of them, so the number under the radar panel is a live estimate, not a replay.
+          Watch the two curves in each strip row stay locked together as the drive slows, turns and straightens.
+        </figcaption>
+      </figure>
       <figure class="hero hero-real hero-stage-ego">
         <video class="hero-media" autoplay muted loop playsinline preload="metadata"
                poster="assets/hero/hero_egomotion_real.png"

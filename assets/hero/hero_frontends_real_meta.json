@@ -1,0 +1,7 @@
+{
+  "frames": 240,
+  "fps": 24,
+  "window_s": 20.0,
+  "ford_lidar_frames": 183,
+  "rs_radar_scans": 269
+}
