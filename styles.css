@@ -324,6 +324,31 @@ footer {
   .hero-still { display: block; }
 }
 
+/* --- S1b overview talk ------------------------------------------------
+   user-initiated playback: no autoplay, no loop, preload="none" so the 7.7 MB
+   file is only fetched on click; the poster carries the first frame */
+.talk {
+  width: 100%;
+  max-width: 1000px;
+  margin: 32px auto 0;
+}
+
+.talk figure { margin: 0; }
+
+.talk-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--rule);
+}
+
+.talk figcaption {
+  max-width: 880px;
+  margin: 12px auto 0;
+  text-align: center;
+}
+
 /* --- S4 method points, S6 limitations, S7 resources ------------------- */
 .method-points,
 .limits,
