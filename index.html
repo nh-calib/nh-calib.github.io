@@ -271,6 +271,32 @@
         </figcaption>
       </figure>
 
+      <p class="stage-bridge">
+        The same mechanism on the real drive. The car runs the whole A2D2 sequence, and every time a gated
+        turn closes it drops one point &mdash; that turn&rsquo;s own path-length difference divided by its own
+        integrated yaw. The joint fit is re-solved from the turns closed so far:
+      </p>
+      <figure class="hero hero-real hero-stage2-real">
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+               poster="assets/hero/hero_py_real.png"
+               aria-label="Two panels replayed over one A2D2 drive. Left, the full ego path fills in and each gated turn segment lights up in red as the car drives through it. Right, one point drops onto the plot at the moment each turn closes, and a joint fit line settles at 581.7 millimetres against a ground truth of 580.0 millimetres.">
+          <source src="assets/hero/hero_py_real.webm" type="video/webm">
+          <source src="assets/hero/hero_py_real.mp4" type="video/mp4">
+        </video>
+        <img class="hero-still" src="assets/hero/hero_py_real.png"
+             alt="The completed A2D2 run: eleven gated turns along the drive, one point each, and a joint fit of 581.7 millimetres against a ground truth of 580.0 millimetres.">
+        <figcaption>
+          A2D2 drive 20180810&#8239;150607, reference <b>FRONT_CENTER</b> &rarr; target <b>FRONT_LEFT</b>. Each
+          point is one gated turn on its own: <i>&Delta;I</i>&#8239;/&#8239;&int;<i>&omega;</i>&#8239;d<i>t</i>,
+          scattering over roughly 36&#8239;mm from turn to turn. The joint fit solves
+          <i>&Delta;I</i> = <i>&Delta;p<sub>y</sub></i>&#8201;&int;<i>&omega;</i>&#8239;d<i>t</i> +
+          <i>&beta;T</i> over all closed segments &mdash; so it is not the average of the points &mdash; and
+          lands at 581.7&#8239;mm against a dataset ground truth of 580.0&#8239;mm, i.e. +1.7&#8239;mm over
+          11 segments (standard error 2.8&#8239;mm). The open marker is one 56&#8239;s window carrying
+          16.5&#8239;rad of yaw; the estimator down-weights it as |<i>W<sub>k</sub></i>|<sup>&minus;1.5</sup>.
+        </figcaption>
+      </figure>
+
       <ul class="method-points">
         <li>
           <b>Turn segments are the unit of work.</b> Angular-rate gates select the intervals that carry rotation,

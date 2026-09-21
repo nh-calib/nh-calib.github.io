@@ -84,3 +84,18 @@ grounds that vehicle rotation is what fixes the lateral velocity a sensor sees.
   page, so the page opens with one claim instead of three animated figures.
 - verified by headless Chrome at frozen SMIL times 0.6 s and 2.0 s plus the static
   variant; page-level asset check reports 0 broken references out of 21.
+
+## S0e  Stage-2 real replay (2026-09-21)
+
+`make_hero_py_real.py` renders `assets/hero/hero_py_real.{mp4,webm,png}` from two
+existing dumps -- `hero_real_20260921/hero_segments.npz` (Step-4 common-window
+segments of the published fixed-dt run) and the S0d chassis path.  Left panel is
+the whole A2D2 drive with the gated turns lighting up as the cursor passes them;
+right panel drops one point per closed segment and re-solves the weighted
+two-parameter fit from the segments closed so far.
+
+Machine check: the script's own `wfit` over all 11 segments returns
+dpy = 0.581666639 m and beta = -0.002138382 m/s, asserted equal to the published
+Step-4 output to 1e-9; running estimate ends at 581.6666 mm against GT 580.0 mm.
+Reveal order is drive order (`argsort(seg_end)`), not magnitude order, so the
+dots are synchronised with the car on the left.
