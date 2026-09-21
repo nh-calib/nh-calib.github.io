@@ -288,7 +288,13 @@ footer {
    of the page, so they need bottom spacing the page-top hero gets from its neighbour */
 .hero-stage0,
 .hero-stage1,
+.hero-stage1-real,
 .hero-stage2 { margin: 8px auto 30px; }
+
+/* the real-data Stage-1 replay is a 20:9 render, not the 16:9 the other heroes use;
+   without its own ratio the frame letterboxes into wide grey bands */
+.hero-stage1-real .hero-media,
+.hero-stage1-real .hero-still { aspect-ratio: 20 / 9; }
 
 .hero-concept img {
   display: block;

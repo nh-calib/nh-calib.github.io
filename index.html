@@ -223,6 +223,33 @@
         </figcaption>
       </figure>
 
+      <!-- S0d: the same Stage-1 mechanism, replayed on real A2D2 data -->
+      <p class="stage-bridge">
+        The same mechanism on the real drive. Nothing below is drawn by hand: the cloud is what
+        Stage&#8239;1 actually consumed, and the moving line is the same robust fit the estimator runs.
+      </p>
+      <figure class="hero hero-real hero-stage1-real">
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+               poster="assets/hero/hero_pxyaw_real.png"
+               aria-label="Two panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Right, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres.">
+          <source src="assets/hero/hero_pxyaw_real.webm" type="video/webm">
+          <source src="assets/hero/hero_pxyaw_real.mp4" type="video/mp4">
+        </video>
+        <img class="hero-still" src="assets/hero/hero_pxyaw_real.png"
+             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, and a fitted lever arm of 1.668 metres against a ground truth of 1.711 metres.">
+        <figcaption>
+          A2D2 drive 20180810&#8239;150607, LiDAR <b>FRONT_CENTER</b> alone &mdash; no second sensor enters this
+          figure. Rearranging the Stage&#8239;1 residual gives
+          <i>&#7805;</i><sub>lat</sub> + <i>v<sub>c</sub></i>&#8201;tan(<i>c&#8201;v<sub>c</sub>&omega;</i>) =
+          <i>p<sub>x</sub>&#8201;&omega;</i>, so the through-origin slope of the right-hand cloud
+          <em>is</em> the lever arm: 1.668&#8239;m over 697 gated samples from 11 turns, against a dataset ground
+          truth of 1.711&#8239;m, with <i>&psi;</i> = 1.230&deg; against 1.225&deg;. Absolute
+          <i>p<sub>x</sub></i> carries the slip-coefficient bias, which is why the paper reports the
+          reference-relative figure (8.8&#8239;mm over four targets); the shaded band is the
+          |<i>&omega;</i>|&#8239;&ge;&#8239;5&#8239;deg/s turn gate.
+        </figcaption>
+      </figure>
+
       <!-- S0d: the Stage-2 mechanism, same schematic treatment as the Stage-1 panel above -->
       <p class="stage-bridge">
         <b>Stage&#8239;2</b> takes the pair. Each sensor now reports its own motion in the vehicle frame, and the
