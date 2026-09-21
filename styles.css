@@ -308,7 +308,7 @@ footer {
 /* the four-front-end replay is rendered 1920x1425, close to 4:3; the 20:9 rule
    above would crop its bottom strip away */
 .hero-frontends .hero-media,
-.hero-frontends .hero-still { aspect-ratio: 1920 / 1425; }
+.hero-frontends .hero-still { aspect-ratio: 1944 / 1116; }
 
 .hero-concept img {
   display: block;
