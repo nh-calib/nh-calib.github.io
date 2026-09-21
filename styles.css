@@ -329,8 +329,8 @@ footer {
    file is only fetched on click; the poster carries the first frame */
 .talk {
   width: 100%;
-  max-width: 1000px;
-  margin: 32px auto 0;
+  max-width: 720px;
+  margin: 26px auto 0;
 }
 
 .talk figure { margin: 0; }
@@ -344,7 +344,7 @@ footer {
 }
 
 .talk figcaption {
-  max-width: 880px;
+  max-width: 660px;
   margin: 12px auto 0;
   text-align: center;
 }

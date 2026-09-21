@@ -214,6 +214,47 @@ OBS = {
                  "methods. Interval-based hand&ndash;eye formulations lose the same component under the same motion. "
                  "It is stated here so that a five-component output is not mistaken for an incomplete implementation."},
 
+        {"t": "p", "text": "That statement has been measured rather than only argued. Road-induced pitch transients "
+                           "&mdash; speed bumps, dips, expansion joints &mdash; are the natural candidate for vertical "
+                           "excitation, because p<sub>z</sub> enters the rigid-body relation only through the pitch "
+                           "channel, v<sub>j,x</sub> = v<sub>c,x</sub> + &omega;<sub>y</sub>p<sub>z,j</sub> "
+                           "&minus; &omega;<sub>z</sub>p<sub>y,j</sub>. Integrated over a window this gives "
+                           "I<sub>x</sub> = &Theta;<sub>y</sub>&middot;&Delta;p<sub>z</sub> &minus; "
+                           "&Theta;<sub>z</sub>&middot;&Delta;p<sub>y</sub>, so the entire lever for the vertical "
+                           "offset is the integrated pitch angle &Theta;<sub>y</sub> = &int;&omega;<sub>y</sub>dt."},
+        {"t": "p", "text": "Counting those transients in the Ford INS attitude at 200&nbsp;Hz &mdash; peak rate at "
+                           "least 2&deg;/s, duration between 0.2 and 0.6&nbsp;s &mdash; finds plenty of them. The "
+                           "lever they carry is the problem, not their number."},
+        {"t": "table",
+         "head": ["Drive", "Pitch transients", "&Theta;<sub>y</sub> median [rad]", "Aggregate lever vs five turns",
+                  "&Delta;p<sub>z</sub> MAE, oracle lever [mm]", "&Delta;p<sub>z</sub> MAE, sensor lever [mm]",
+                  "Trivial &Delta;p<sub>z</sub>=0 [mm]"],
+         "rows": [
+             ["Log&nbsp;4", "278", "0.0092", "0.193", "330.0", "605.0", "90.0"],
+             ["Log&nbsp;5", "374", "0.0096", "0.224", "680.8", "562.2", "90.0"],
+             ["Log&nbsp;6", "245", "0.0096", "0.182", "273.4", "447.3", "90.0"],
+         ],
+         "cap": "One transient carries about 1.8&percnt; of the lever of a single 30&deg; turn. Pooling every "
+                "transient in all three drives still reaches only 35&percnt; of the lever that five turns already "
+                "provide for the lateral offset. Fitting &Delta;p<sub>z</sub> on those windows &mdash; even when the "
+                "lever is computed from the 200&nbsp;Hz ground-truth attitude rather than from the sensor &mdash; is "
+                "three to seven times worse than simply declaring the two sensors to be at the same height."},
+        {"t": "note", "kind": "warn", "label": "Two mechanisms remove the lever",
+         "text": "A bump that is driven over completely returns the body to its original attitude, so "
+                 "&int;&omega;<sub>y</sub>dt over the full event is approximately zero and the integral form cancels "
+                 "its own lever. Using only the rising or falling half keeps a lever but exposes differential scale "
+                 "error. Separately, a 0.28&nbsp;s transient spans roughly three frames of a 10&nbsp;Hz lidar: the "
+                 "pitch lever actually visible in the sensor stream is only 30&ndash;44&percnt; of the lever present "
+                 "in the 200&nbsp;Hz reference."},
+        {"t": "note", "kind": "note", "label": "The omitted roll term",
+         "text": "The lateral residual in <a href='m3-x-yaw.html'>A4</a> drops a &minus;&omega;<sub>x</sub>p<sub>z</sub> "
+                 "term for the same reason. Measured on the samples the pipeline actually consumes, that term is "
+                 "3&ndash;16&percnt; the size of the &omega;<sub>z</sub>p<sub>x</sub> term it sits beside, and holding "
+                 "p<sub>z</sub> at its true value shifts the absolute longitudinal offset by up to about 40&nbsp;mm "
+                 "with the same sign across forward channels &mdash; largely common mode, so relative estimates absorb "
+                 "most of it. Letting p<sub>z</sub> float instead is actively harmful: the design condition number "
+                 "rises by 4&ndash;16&times; and some channels jump to the opposite yaw branch."},
+
         {"t": "h", "level": 2, "id": "gauge", "no": 5, "text": "Gauge freedoms"},
         {"t": "table",
          "head": ["Freedom", "Status", "How it is handled"],
