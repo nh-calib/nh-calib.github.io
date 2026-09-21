@@ -45,7 +45,7 @@ footer {
 }
 
 .paper-header {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 76px 0 38px;
   text-align: center;
@@ -63,10 +63,11 @@ footer {
 h1 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(34px, 5vw, 55px);
+  font-size: clamp(27px, 3.6vw, 41px);
   font-weight: 600;
-  line-height: 1.13;
-  letter-spacing: -.025em;
+  line-height: 1.16;
+  letter-spacing: -.022em;
+  text-wrap: balance;
 }
 
 .authors { margin: 26px 0 2px; font-size: 18px; }
