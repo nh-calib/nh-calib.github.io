@@ -288,6 +288,10 @@ footer {
 
 .hero-real { margin-top: 12px; }
 
+/* S0c sits inside the Method section rather than at the top of the page, so it
+   needs the bottom spacing the two page-top heroes get from their neighbours */
+.hero-stage1 { margin: 8px auto 30px; }
+
 .hero-concept img {
   display: block;
   width: 100%;

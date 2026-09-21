@@ -60,3 +60,27 @@ The spec assumed plan B needs "the existing pose/twist npz only" (§2.3). A prob
   superseded stored-dt run (FC->FL estimate 0.5224 m, 57.6 mm error), not the published one.
 
 Halted rather than falling back automatically, per decision D3.
+
+
+## 2026-09-21 — S0c, the Stage-1 companion panel
+
+User asked for the same moving treatment applied to `p_x` and the yaw offset, on the
+grounds that vehicle rotation is what fixes the lateral velocity a sensor sees.
+
+- generator `tools/make_hero_pxyaw.py`, same construction rules as `make_hero_concept.py`:
+  SMIL only, no unit-bearing number in any text, pure string building, self-refusing gate.
+  The gate also resolves every `href="#id"` and `url(#id)` against the ids it emitted.
+- 4.5 s loop. Left panel: straight running, the sensor velocity resolved on its own
+  rotated axes. Right panel: a steady left turn about a visible ICR, where the sensor
+  gains `omega * p_x`. Bottom strip: lateral velocity against turn rate, one line through
+  the origin.
+- labels ride with the turning vehicle but stay horizontal. Each label gets its own
+  `animateMotion` track, sampled as the world path of that body point. Legitimate because
+  the turn is a rigid rotation about the ICR, so every body point sweeps the same angle
+  and the tracks stay in step without extra timing work.
+- the opposite-turn sign flip is carried by the readout strip, not by a second geometry
+  panel: a mirrored panel cannot hold both the path and a visible ICR inside the frame.
+- placed inside Method (after the two-stage pipeline figure) rather than at the top of the
+  page, so the page opens with one claim instead of three animated figures.
+- verified by headless Chrome at frozen SMIL times 0.6 s and 2.0 s plus the static
+  variant; page-level asset check reports 0 broken references out of 21.

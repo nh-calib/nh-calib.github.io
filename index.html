@@ -195,6 +195,27 @@
           <b>Stage&#8239;2</b> associates turns across sensors and solves relative Y.
         </figcaption>
       </figure>
+      <!-- S0c: the Stage-1 mechanism, same schematic treatment as the S0a hero -->
+      <figure class="hero hero-concept hero-stage1">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_pxyaw_static.svg">
+          <img src="assets/hero/hero_pxyaw.svg"
+               alt="Two panels. Left, a vehicle running straight: the axle point has no lateral velocity, so the sensor's lateral reading is its own yaw misalignment, drawn as the velocity resolved on the sensor's rotated axes. Right, the same vehicle in a steady turn about an instantaneous centre of rotation, where the sensor gains a lateral velocity equal to the turn rate times its longitudinal lever arm. Below, lateral velocity plotted against turn rate: straight frames on the origin, turning frames on a line whose slope is the lever arm.">
+        </picture>
+        <figcaption>
+          Schematic, synthetic values, offsets exaggerated. Non-holonomic motion leaves the vehicle body with
+          no lateral velocity, so a sensor mounted a lever arm <i>p<sub>x</sub></i> ahead of the axle must read
+          exactly <i>&omega;&#8201;p<sub>x</sub></i> sideways &mdash; and under straight running, where
+          <i>&omega;</i> vanishes, whatever lateral reading survives is the sensor's own yaw offset
+          <i>&psi;</i>. That is the whole of Stage&#8239;1: the residual
+          <i>r</i> = sin&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> +
+          cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i> &minus;
+          <i>&omega;&#8201;p<sub>x</sub></i> is driven to zero over the gated turn segments, with a shared slip
+          coefficient absorbing the speed-dependent departure from the ideal line. One sensor, no target and
+          no shared field of view.
+        </figcaption>
+      </figure>
+
       <ul class="method-points">
         <li>
           <b>Turn segments are the unit of work.</b> Angular-rate gates select the intervals that carry rotation,
