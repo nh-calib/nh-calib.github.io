@@ -1,0 +1,14 @@
+{
+  "ford_window_t0": 1501822721.80549,
+  "rs_window_t0": 156902.501612,
+  "ford_median_speed_gap_mps": 0.21786020451303667,
+  "ford_median_wz_gap_radps": 0.004924003905615315,
+  "rs_median_speed_gap_mps": 0.08318980450195568,
+  "ford_lidar_n": 183,
+  "ford_ins_hz": 199.8048780487805,
+  "rs_radar_n": 269,
+  "rs_can_hz": 100.00000019790605,
+  "rs_scan_detections": 324,
+  "rs_scan_inlier_frac": 0.8796296296296297,
+  "ins_smoothing_s": 0.2
+}

@@ -198,6 +198,20 @@
           a shared modality.
         </p>
       </div>
+      <figure class="module-figure" id="fig-frontends">
+        <img src="assets/frontends_real.png"
+             alt="Four panels over two drives. Top left, two consecutive Ford LiDAR scans overlaid in the sensor frame during a turn. Top right, one RadarScenes radar scan plotted as detection azimuth against radial velocity, with a robust cosine fit through the stationary returns. Bottom left, the Ford INS pose trace over twenty seconds with heading ticks. Bottom right, three seconds of RadarScenes CAN speed and yaw-rate messages. Below them, a two-row strip of speed and yaw rate for the same windows: the LiDAR and INS curves lie on top of each other, and so do the radar and CAN curves.">
+        <figcaption>
+          Four front ends, two drives, one interface. <i>Ford Multi-AV Log&#8239;4</i>: KISS-ICP on the RED
+          HDL-32E against the 200&#8239;Hz GNSS/INS pose stream. <i>RadarScenes sequence&#8239;1</i>: Doppler
+          ego-velocity from a single 2-D radar against the vehicle bus. The top row shows what each modality
+          actually measures &mdash; a point cloud, an azimuth/Doppler cosine, a pose trace, two bus scalars.
+          The strip below shows what the estimator receives. Within each drive the two independent front ends
+          agree to a median <b>0.22&#8239;m/s</b> and <b>0.005&#8239;rad/s</b> (Ford) and <b>0.08&#8239;m/s</b>
+          (RadarScenes), which is why the modality is free. The one asymmetry is real and stated: a single 2-D
+          radar gives <i>v</i> but not <i>&omega;</i>, so RadarScenes takes its yaw rate from CAN.
+        </figcaption>
+      </figure>
       <figure class="hero hero-real hero-stage-ego">
         <video class="hero-media" autoplay muted loop playsinline preload="metadata"
                poster="assets/hero/hero_egomotion_real.png"
