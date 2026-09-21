@@ -93,7 +93,6 @@
 
       <div class="card-grid">
         <article class="card">
-          <img src="assets/cards/card1-no-target.svg" alt="Left: a sensor observing a checkerboard target on a tripod in a calibration room. Right: a vehicle driving a turn on an ordinary road.">
           <div class="card-body">
           <h3>No target, no calibration site</h3>
           <p>
@@ -101,9 +100,9 @@
             estimator needs, so a mount change costs a drive rather than a booked facility.
           </p>
           </div>
+          <img src="assets/cards/card1-no-target.svg" alt="Left: a sensor observing a checkerboard target on a tripod in a calibration room. Right: a vehicle driving a turn on an ordinary road.">
         </article>
         <article class="card">
-          <img src="assets/cards/card2-no-shared-fov.svg" alt="Left: two sensors with non-intersecting fields of view and no shared points. Right: their two ego-motion paths, offset by the extrinsic to be estimated.">
           <div class="card-body">
           <h3>No shared field of view</h3>
           <p>
@@ -111,9 +110,9 @@
             Front and rear LiDARs, or LiDAR against radar, are handled the same way.
           </p>
           </div>
+          <img src="assets/cards/card2-no-shared-fov.svg" alt="Left: two sensors with non-intersecting fields of view and no shared points. Right: their two ego-motion paths, offset by the extrinsic to be estimated.">
         </article>
         <article class="card">
-          <img src="assets/cards/card3-alignment-scope.svg" alt="Six degree-of-freedom chips: X, roll, pitch and yaw marked sensor-local; Y marked as requiring inter-sensor time alignment; Z marked unobservable under planar motion.">
           <div class="card-body">
           <h3>Timing touches one parameter</h3>
           <p>
@@ -128,6 +127,7 @@
             is not a claim of robustness to bad synchronization.
           </p>
           </div>
+          <img src="assets/cards/card3-alignment-scope.svg" alt="Six degree-of-freedom chips: X, roll, pitch and yaw marked sensor-local; Y marked as requiring inter-sensor time alignment; Z marked unobservable under planar motion.">
         </article>
       </div>
     </section>
@@ -157,10 +157,6 @@
           <b>Stage 2:</b> turn association, common-window integration, pairwise relative-Y estimation, and robust fusion.
         </figcaption>
       </figure>
-      <p class="lead">
-        A module-by-module reference &mdash; assumptions, equations, solver settings, gates and failure modes for each
-        algorithm &mdash; is available in the <a href="wiki/index.html">algorithm wiki</a>.
-      </p>
       <figure class="paper-figure compact-figure">
         <img src="assets/fig03_relative_y_sumform_v1.png" alt="Relative Y estimation from associated turning segments">
         <figcaption>
@@ -168,6 +164,23 @@
           linear in heading change and relative Y.
         </figcaption>
       </figure>
+
+      <aside class="wiki-callout">
+        <p class="callout-kicker">The detailed algorithm description lives in the wiki</p>
+        <p>
+          This page states the method only as far as the results need. Each module is written out in full &mdash;
+          assumptions, equations, solver settings, gates, every parameter value and the failure modes &mdash; in the
+          <a href="wiki/index.html">algorithm wiki</a>, which also carries the material that did not fit the paper.
+        </p>
+        <ul class="callout-links">
+          <li><a href="wiki/observability.html">Observability</a> &mdash; which degrees of freedom vehicle motion constrains, and why Z is not one of them</li>
+          <li><a href="wiki/m1-turn-segments.html">Stage 1</a> &mdash; turn segments, motion-plane alignment, sign gauge, X / yaw / slip, relativization</li>
+          <li><a href="wiki/sum-form.html">Stage 2</a> &mdash; time alignment, sum-form relative Y, pairwise graph fusion</li>
+          <li><a href="wiki/parameters.html">Parameters</a> &mdash; every threshold and constant, and which of them actually move the result</li>
+          <li><a href="wiki/data-inventory.html">Behind the paper</a> &mdash; data inventory, extracted segments, odometry quality, ablations</li>
+          <li><a href="wiki/failure-modes.html">Failure modes</a> &mdash; symptom, checkpoint, diagnosis for each way the estimate degrades</li>
+        </ul>
+      </aside>
     </section>
 
     <section class="content-section" id="results">
