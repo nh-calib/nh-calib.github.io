@@ -24,25 +24,7 @@
 
   <main id="top">
 
-    <!-- S0a ----------------------------------------------------------- -->
-    <figure class="hero hero-concept">
-      <picture>
-        <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_concept_static.svg">
-        <img src="assets/hero/hero_concept.svg"
-             alt="Two panels, a left turn and a right turn. In each, a reference sensor and a target sensor trace arcs of different radius about a shared instantaneous centre of rotation, and a bar below shows their accumulated path-length difference growing and reversing sign between the two turns.">
-      </picture>
-      <figcaption>
-        Schematic, synthetic values. Two sensors bolted to one chassis sweep the same turn about a shared
-        instantaneous centre of rotation (ICR) at different radii. That radius
-        difference <i>is</i> the lateral mounting offset <i>&Delta;p<sub>y</sub></i>, and the accumulated
-        path-length difference <i>&Delta;I</i> carries its sign with the turn direction. No target, no shared
-        field of view and no point correspondence enters the construction.
-      </figcaption>
-    </figure>
-
-    <!-- S0b ----------------------------------------------------------- -->
-    <p class="hero-bridge">The same quantity, measured on real drive data:</p>
-
+    <!-- S0: the claim, on real drive data ---------------------------- -->
     <figure class="hero hero-real">
       <video class="hero-media" autoplay muted loop playsinline preload="metadata"
              poster="assets/hero/hero_real_poster.png"
@@ -195,7 +177,7 @@
           <b>Stage&#8239;2</b> associates turns across sensors and solves relative Y.
         </figcaption>
       </figure>
-      <!-- S0c: the Stage-1 mechanism, same schematic treatment as the S0a hero -->
+      <!-- S0c: the Stage-1 mechanism, schematic -->
       <figure class="hero hero-concept hero-stage1">
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_pxyaw_static.svg">
@@ -213,6 +195,27 @@
           <i>&omega;&#8201;p<sub>x</sub></i> is driven to zero over the gated turn segments, with a shared slip
           coefficient absorbing the speed-dependent departure from the ideal line. One sensor, no target and
           no shared field of view.
+        </figcaption>
+      </figure>
+
+      <!-- S0d: the Stage-2 mechanism, same schematic treatment as the Stage-1 panel above -->
+      <p class="stage-bridge">
+        <b>Stage&#8239;2</b> takes the pair. Each sensor now reports its own motion in the vehicle frame, and the
+        one thing a single sensor cannot see &mdash; how far apart the two are across the vehicle &mdash; falls out
+        of the same turns:
+      </p>
+      <figure class="hero hero-concept hero-stage2">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_concept_static.svg">
+          <img src="assets/hero/hero_concept.svg"
+               alt="Two panels, a left turn and a right turn. In each, a reference sensor and a target sensor trace arcs of different radius about a shared instantaneous centre of rotation, and a bar below shows their accumulated path-length difference growing and reversing sign between the two turns.">
+        </picture>
+        <figcaption>
+          Schematic, synthetic values. Two sensors bolted to one chassis sweep the same turn about a shared
+          instantaneous centre of rotation (ICR) at different radii. That radius
+          difference <i>is</i> the lateral mounting offset <i>&Delta;p<sub>y</sub></i>, and the accumulated
+          path-length difference <i>&Delta;I</i> carries its sign with the turn direction. No target, no shared
+          field of view and no point correspondence enters the construction.
         </figcaption>
       </figure>
 

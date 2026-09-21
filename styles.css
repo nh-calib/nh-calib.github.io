@@ -271,12 +271,10 @@ footer {
   border: 1px solid var(--rule);
 }
 
-/* S0a -> S0b bridge: says the second panel is the same quantity on real data,
-   so the two hero panels are not read as two different claims (spec R-C3) */
-.hero-bridge {
-  max-width: 1100px;
-  margin: 34px auto 0;
-  text-align: center;
+/* Stage-1 -> Stage-2 bridge inside Method: keeps the two schematics reading as
+   one argument continued, not as two separate claims (spec R-C3) */
+.stage-bridge {
+  margin: 0 0 4px;
   color: var(--muted);
   font-size: 15.5px;
 }
@@ -286,11 +284,10 @@ footer {
    because SVG-as-image does not reliably inherit the user's motion setting. */
 .hero-concept picture { display: block; }
 
-.hero-real { margin-top: 12px; }
-
-/* S0c sits inside the Method section rather than at the top of the page, so it
-   needs the bottom spacing the two page-top heroes get from their neighbours */
-.hero-stage1 { margin: 8px auto 30px; }
+/* The two stage schematics sit inside the Method section rather than at the top
+   of the page, so they need bottom spacing the page-top hero gets from its neighbour */
+.hero-stage1,
+.hero-stage2 { margin: 8px auto 30px; }
 
 .hero-concept img {
   display: block;
