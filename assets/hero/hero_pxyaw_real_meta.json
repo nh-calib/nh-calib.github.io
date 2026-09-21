@@ -10,6 +10,27 @@
   "psi_core_deg": 1.2304166996054853,
   "psi_gt_deg": 1.2246439253147154,
   "psi_err_deg": 0.005772774290769833,
+  "selfcheck_solve2_psi_deg": 1.2300489773535657,
+  "selfcheck_solve2_px_m": 1.6685798568317163,
   "n_samples": 697,
-  "n_turn_segments": 11
+  "n_turn_segments": 11,
+  "n_constraint_lines": 11,
+  "n_line_intersections": 48,
+  "intersection_median_psi_deg": 1.2326748908495193,
+  "intersection_median_px_m": 1.6821705741292554,
+  "line_slopes_m_per_rad": [
+    13.86,
+    -21.63,
+    -29.69,
+    -17.76,
+    -23.52,
+    -24.51,
+    -18.95,
+    -20.77,
+    27.34,
+    -25.84,
+    34.66
+  ],
+  "n_left_turns": 3,
+  "n_right_turns": 8
 }

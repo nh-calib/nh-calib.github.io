@@ -288,18 +288,19 @@
         <figcaption>Schematic, synthetic values, offsets exaggerated.</figcaption>
       </figure>
       <p class="stage-bridge">
-        The same module on the real drive &mdash; the cloud is what it actually consumed, and the moving line is
-        the same robust fit:
+        The same module on the real drive &mdash; the cloud is what it actually consumed, the moving line is the
+        same robust fit, and the right panel shows each turn projecting into the
+        (<i>&psi;</i>,&#8202;<i>p<sub>x</sub></i>) parameter space as the pair is solved:
       </p>
       <figure class="hero hero-real hero-stage1-real">
         <video class="hero-media" autoplay muted loop playsinline preload="metadata"
                poster="assets/hero/hero_pxyaw_real.png"
-               aria-label="Two panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Right, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres.">
+               aria-label="Three panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Middle, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres. Right, the yaw-versus-lever-arm parameter space: each completed turn drops one straight constraint line, blue for left turns and red for right turns, and the running two-parameter solve walks into the knot where the lines of opposite curvature cross.">
           <source src="assets/hero/hero_pxyaw_real.webm" type="video/webm">
           <source src="assets/hero/hero_pxyaw_real.mp4" type="video/mp4">
         </video>
         <img class="hero-still" src="assets/hero/hero_pxyaw_real.png"
-             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, and a fitted lever arm of 1.668 metres against a ground truth of 1.711 metres.">
+             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, a fitted lever arm of 1.668 metres against a ground truth of 1.711 metres, and eleven constraint lines crossing in the yaw-lever-arm plane.">
         <figcaption>
           A2D2 <b>FRONT_CENTER</b> alone &mdash; no second sensor enters this figure. Rearranged, the residual
           gives <i>&#7805;</i><sub>lat</sub> + <i>v<sub>c</sub></i>&#8201;tan(<i>c&#8201;v<sub>c</sub>&omega;</i>) =
@@ -307,6 +308,18 @@
           1.668&#8239;m over 697 gated samples from 11 turns against a ground truth of 1.711&#8239;m, with
           <i>&psi;</i> = 1.230&deg; against 1.225&deg;. The shaded band is the
           |<i>&omega;</i>|&#8239;&ge;&#8239;5&#8239;deg/s gate.
+          <br>
+          The right panel is why a single turn is not enough. Perturbing the solution by
+          (<i>&delta;&psi;</i>, <i>&delta;p<sub>x</sub></i>) expands the residual to
+          <i>&omega;&#8201;&delta;p<sub>x</sub></i> + <i>&delta;&psi;&#8201;v<sub>jx</sub></i>, so the lever on yaw
+          is the sensor's own <em>longitudinal</em> speed
+          <i>v<sub>jx</sub></i> = <i>v<sub>cx</sub></i> &minus; <i>&omega;&#8201;p<sub>y</sub></i> &mdash; not
+          driving straight. One curvature therefore projects to one straight line of slope
+          <i>v<sub>jx</sub></i>/<i>&omega;</i>, never to a point: measured slopes run
+          &minus;17.8 to &minus;29.7&#8239;m/rad for the 8 right turns and +13.9 to +34.7&#8239;m/rad for the
+          3 left turns, and their 48 pairwise crossings have a median of
+          (1.233&deg;, 1.682&#8239;m) against the solved (1.230&deg;, 1.668&#8239;m). Opposite turn direction is
+          the strongest lever here; with one curvature only, <i>&psi;</i> and <i>p<sub>x</sub></i> stay on a line.
         </figcaption>
       </figure>
 
