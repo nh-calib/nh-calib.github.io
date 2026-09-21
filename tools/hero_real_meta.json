@@ -1,0 +1,30 @@
+{
+  "dataset": "A2D2",
+  "drive": "20180810_150607",
+  "reference": "FRONT_CENTER",
+  "target": "FRONT_LEFT",
+  "twist": "/home/ailab-12/nh_calib_lidar/a2d2_final_calibration_20260811/a2d2_lidar5_final_twist.npz",
+  "fixed_dt_s": 0.03333333333333333,
+  "delta_py_m": 0.5816666386555642,
+  "gt_rel_m": 0.5800000443685647,
+  "error_mm": 1.6665942869995565,
+  "n_segments": 11,
+  "delta_py_se_m": 0.0027954250886510846,
+  "beta_mps": -0.002138382165154015,
+  "rmse_m": 0.033092806737430196,
+  "psi_deg": {
+    "FRONT_CENTER": 1.2357535394929366,
+    "FRONT_LEFT": 4.680402012869899,
+    "FRONT_RIGHT": -0.35788740493735127,
+    "SIDE_LEFT": 91.1204063895434,
+    "SIDE_RIGHT": -92.99620739356511
+  },
+  "px_m": {
+    "FRONT_CENTER": 1.6542415794481988,
+    "FRONT_LEFT": 1.6448518028486083,
+    "FRONT_RIGHT": 1.6431683223945215,
+    "SIDE_LEFT": 0.5999420135375383,
+    "SIDE_RIGHT": 0.6017457647765129
+  },
+  "slip_c": -0.0035936781455752883
+}
