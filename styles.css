@@ -157,6 +157,48 @@ footer {
   font-size: 12px;
 }
 
+/* --- "Where existing calibration stops": constraint matrix + cards --- */
+.matrix { min-width: 820px; font-size: 13.5px; }
+.matrix th,
+.matrix td { text-align: left; vertical-align: top; }
+.matrix thead th { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.matrix tbody th { white-space: nowrap; }
+.matrix .yes,
+.matrix .no,
+.matrix .part,
+.matrix .na { display: inline-block; width: 15px; font-weight: 700; }
+.matrix .yes { color: var(--ink); }
+.matrix .no,
+.matrix .part { color: var(--accent); }
+.matrix .na { color: var(--muted); }
+.matrix tr.ours { background: var(--soft); }
+.matrix tr.ours th { font-weight: 700; }
+
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 34px;
+  margin-top: 38px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: 30px;
+  align-items: center;
+  padding-top: 26px;
+  border-top: 1px solid var(--rule);
+}
+
+.card img { width: 100%; border: 1px solid var(--rule); background: #fff; }
+.card h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; }
+.card p { margin: 0; color: #333; font-size: 14.5px; line-height: 1.6; }
+.card .guard { margin-top: 10px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 860px) {
+  .card { grid-template-columns: 1fr; gap: 18px; }
+}
+
 @media (max-width: 720px) {
   .topbar { align-items: flex-start; }
   nav { gap: 13px; }

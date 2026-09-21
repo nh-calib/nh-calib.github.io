@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="t d">
+  <title id="t">Which calibration parameters depend on inter-sensor time alignment</title>
+  <desc id="d">Six chips for the six rigid-body degrees of freedom. X, roll, pitch and yaw are marked sensor-local and alignment-free; Y is marked as requiring inter-sensor time alignment; Z is marked unobservable under planar motion.</desc>
+
+  <style>
+    .fg { fill: none; stroke: #191919; stroke-width: 1.6; }
+    .fg-thin { fill: none; stroke: #666666; stroke-width: 1.2; }
+    .rule { fill: none; stroke: #d8d8d8; stroke-width: 1.2; }
+    .acc { fill: none; stroke: #a52e29; stroke-width: 1.8; }
+    .dash { stroke-dasharray: 5 4; }
+    .dot { stroke-dasharray: 2 3; }
+    .soft { fill: #f5f5f3; stroke: none; }
+    .body { fill: #ffffff; stroke: #191919; stroke-width: 1.6; }
+    .ink-fill { fill: #191919; stroke: none; }
+    .acc-fill { fill: #a52e29; stroke: none; }
+    text { font-family: Arial, Helvetica, sans-serif; fill: #191919; }
+    .h { font-size: 15px; font-weight: 700; }
+    .h-acc { font-size: 15px; font-weight: 700; fill: #a52e29; }
+    .lbl { font-size: 12.5px; fill: #666666; }
+    .lbl-ink { font-size: 12.5px; fill: #191919; }
+    .tag { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; fill: #666666; }
+    .mono { font-size: 13px; font-weight: 700; }
+  </style>
+  <text class="tag" x="20" y="26">DEGREES OF FREEDOM</text>
+  <text class="h" x="20" y="48">Where inter-sensor timing enters</text>
+  <rect x="20" y="74" width="190" height="64" rx="7" fill="#f5f5f3" stroke="#d8d8d8" stroke-width="1.2" />
+  <text class="mono" x="34" y="101">X</text>
+  <text class="lbl" x="34" y="120">longitudinal &#183; sensor-local</text>
+  <circle cx="190" cy="94" r="8" fill="none" stroke="#191919" stroke-width="1.6" />
+  <path class="fg" d="M 185.5 94.3 L 188.8 97.6 L 194.8 90.2" />
+
+  <rect x="225" y="74" width="190" height="64" rx="7" fill="#f5f5f3" stroke="#d8d8d8" stroke-width="1.2" />
+  <text class="mono" x="239" y="101">Roll</text>
+  <text class="lbl" x="239" y="120">motion plane &#183; sensor-local</text>
+  <circle cx="395" cy="94" r="8" fill="none" stroke="#191919" stroke-width="1.6" />
+  <path class="fg" d="M 390.5 94.3 L 393.8 97.6 L 399.8 90.2" />
+
+  <rect x="430" y="74" width="190" height="64" rx="7" fill="#f5f5f3" stroke="#d8d8d8" stroke-width="1.2" />
+  <text class="mono" x="444" y="101">Pitch</text>
+  <text class="lbl" x="444" y="120">motion plane &#183; sensor-local</text>
+  <circle cx="600" cy="94" r="8" fill="none" stroke="#191919" stroke-width="1.6" />
+  <path class="fg" d="M 595.5 94.3 L 598.8 97.6 L 604.8 90.2" />
+
+  <rect x="20" y="152" width="190" height="64" rx="7" fill="#f5f5f3" stroke="#d8d8d8" stroke-width="1.2" />
+  <text class="mono" x="34" y="179">Yaw</text>
+  <text class="lbl" x="34" y="198">heading &#183; sensor-local</text>
+  <circle cx="190" cy="172" r="8" fill="none" stroke="#191919" stroke-width="1.6" />
+  <path class="fg" d="M 185.5 172.3 L 188.8 175.6 L 194.8 168.2" />
+
+  <rect x="225" y="152" width="190" height="64" rx="7" fill="#fff" stroke="#a52e29" stroke-width="2" />
+  <text class="mono" x="239" y="179" fill="#a52e29">Y</text>
+  <text class="lbl" x="239" y="198">lateral &#183; needs alignment</text>
+  <circle cx="395" cy="172" r="9" fill="none" stroke="#a52e29" stroke-width="1.6" />
+  <path class="acc" d="M 395 167 L 395 172 L 399 175" />
+  <rect x="430" y="152" width="190" height="64" rx="7" fill="none" stroke="#d8d8d8" stroke-width="1.2" stroke-dasharray="5 4" />
+  <text class="mono" x="444" y="179" fill="#666666">Z</text>
+  <text class="lbl" x="444" y="198">height &#183; not observable</text>
+  <line class="rule" x1="20" y1="240" x2="620" y2="240" />
+  <text class="lbl-ink" x="20" y="266">Of the five degrees of freedom this motion makes observable,</text>
+  <text class="h-acc" x="20" y="288">exactly one &#8212; relative Y &#8212; is coupled to inter-sensor time alignment.</text>
+  <text class="lbl" x="20" y="312">Z stays unobservable because planar driving never excites it &#8212; a property of the motion,</text>
+  <text class="lbl" x="20" y="330">not an advantage of the method.</text>
+</svg>

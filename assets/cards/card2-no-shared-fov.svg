@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="t d">
+  <title id="t">Non-overlapping fields of view</title>
+  <desc id="d">Left: two sensors on one vehicle pointing in opposite directions, their fields of view do not intersect, so no common points exist. Right: the same two sensors, each measuring its own ego-motion, linked by the single rigid chassis motion.</desc>
+
+  <style>
+    .fg { fill: none; stroke: #191919; stroke-width: 1.6; }
+    .fg-thin { fill: none; stroke: #666666; stroke-width: 1.2; }
+    .rule { fill: none; stroke: #d8d8d8; stroke-width: 1.2; }
+    .acc { fill: none; stroke: #a52e29; stroke-width: 1.8; }
+    .dash { stroke-dasharray: 5 4; }
+    .dot { stroke-dasharray: 2 3; }
+    .soft { fill: #f5f5f3; stroke: none; }
+    .body { fill: #ffffff; stroke: #191919; stroke-width: 1.6; }
+    .ink-fill { fill: #191919; stroke: none; }
+    .acc-fill { fill: #a52e29; stroke: none; }
+    text { font-family: Arial, Helvetica, sans-serif; fill: #191919; }
+    .h { font-size: 15px; font-weight: 700; }
+    .h-acc { font-size: 15px; font-weight: 700; fill: #a52e29; }
+    .lbl { font-size: 12.5px; fill: #666666; }
+    .lbl-ink { font-size: 12.5px; fill: #191919; }
+    .tag { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; fill: #666666; }
+    .mono { font-size: 13px; font-weight: 700; }
+  </style>
+  <defs><marker id="ar2" viewBox="0 0 8 8" refX="5" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M 0 1 L 6 4 L 0 7 z" fill="#a52e29" /></marker></defs>
+  <text class="tag" x="20" y="26">CONVENTIONAL</text>
+  <text class="h" x="20" y="48">Needs co-visible structure</text>
+  <g transform="translate(168 196) rotate(0) scale(1.15)">
+    <rect class="body" x="-17" y="-29" width="34" height="58" rx="8" />
+    <path class="fg-thin" d="M -12 -14 L 12 -14 M -12 8 L 12 8" />
+    <rect class="ink-fill" x="-21" y="-22" width="5" height="11" rx="2" />
+    <rect class="ink-fill" x="16" y="-22" width="5" height="11" rx="2" />
+    <rect class="ink-fill" x="-21" y="12" width="5" height="11" rx="2" />
+    <rect class="ink-fill" x="16" y="12" width="5" height="11" rx="2" />
+  </g>
+
+  <path class="soft" d="M 168 160 L 92 74 L 244 74 z" />
+  <path class="fg-thin dot" d="M 168 160 L 92 74 M 168 160 L 244 74" />
+  <circle class="acc-fill" cx="168" cy="160" r="4.5" />
+  <text class="lbl-ink" x="168" y="66" text-anchor="middle">sensor A field of view</text>
+  <path class="soft" d="M 168 232 L 100 282 L 236 282 z" />
+  <path class="fg-thin dot" d="M 168 232 L 100 282 M 168 232 L 236 282" />
+  <circle class="acc-fill" cx="168" cy="232" r="4.5" />
+  <text class="lbl-ink" x="168" y="296" text-anchor="middle">sensor B field of view</text>
+  <circle class="acc dash" cx="168" cy="196" r="27" />
+  <circle cx="168" cy="196" r="8" fill="none" stroke="#a52e29" stroke-width="1.6" />
+  <path class="acc" d="M 164.0 192.0 L 172.0 200.0 M 172.0 192.0 L 164.0 200.0" />
+
+  <path class="fg-thin" d="M 196 196 L 268 196" />
+  <text class="lbl" x="272" y="192">no shared</text>
+  <text class="lbl" x="272" y="208">points</text>
+  <line class="rule" x1="20" y1="308" x2="300" y2="308" />
+  <text class="lbl" x="20" y="330">Registration and overlap-based methods</text>
+  <text class="lbl" x="20" y="346">need a scene both sensors can see.</text>
+  <circle cx="288" cy="322" r="9" fill="none" stroke="#a52e29" stroke-width="1.6" />
+  <path class="acc" d="M 283.5 317.5 L 292.5 326.5 M 292.5 317.5 L 283.5 326.5" />
+
+  <line class="rule" x1="320" y1="18" x2="320" y2="342" />
+
+  <text class="tag" x="350" y="26" fill="#a52e29">NH-CALIB</text>
+  <text class="h" x="350" y="48">Compare motions, not views</text>
+  <path d="M 390 238 C 390 196 416 168 466 150 C 512 134 562 134 600 130" fill="none" stroke="#191919" stroke-width="1.6" stroke-dasharray="6 5" />
+  <path d="M 390 277 C 392 232 424 196 474 178 C 520 162 570 160 614 154" fill="none" stroke="#a52e29" stroke-width="1.6" stroke-dasharray="6 5" />
+  <g transform="translate(390 258) rotate(2) scale(0.66)">
+    <rect class="body" x="-17" y="-29" width="34" height="58" rx="8" />
+    <path class="fg-thin" d="M -12 -14 L 12 -14 M -12 8 L 12 8" />
+    <rect class="ink-fill" x="-21" y="-22" width="5" height="11" rx="2" />
+    <rect class="ink-fill" x="16" y="-22" width="5" height="11" rx="2" />
+    <rect class="ink-fill" x="-21" y="12" width="5" height="11" rx="2" />
+    <rect class="ink-fill" x="16" y="12" width="5" height="11" rx="2" />
+  </g>
+
+  <circle class="ink-fill" cx="390" cy="239" r="4.5" />
+  <circle class="acc-fill" cx="390" cy="277" r="4.5" />
+  <text class="lbl-ink" x="366" y="236" text-anchor="end">A</text>
+  <text class="lbl" x="366" y="282" text-anchor="end" fill="#a52e29">B</text>
+  <circle class="ink-fill" cx="600" cy="130" r="4.5" />
+  <circle class="acc-fill" cx="614" cy="154" r="4.5" />
+  <text class="lbl-ink" x="556" y="118">motion of A</text>
+  <text class="lbl" x="558" y="174" fill="#a52e29">motion of B</text>
+  <path class="acc" d="M 468 148 L 478 177" />
+  <path class="acc" d="M 463 145 L 473 141 M 473 180 L 483 176" />
+  <text class="lbl-ink" x="450" y="210">mounting offset</text>
+  <line class="rule" x1="350" y1="308" x2="620" y2="308" />
+  <text class="lbl" x="350" y="330">Two ego-motions of one rigid body differ</text>
+  <text class="lbl" x="350" y="346">only by the extrinsic, not by a shared view.</text>
+  <circle cx="608" cy="322" r="9" fill="none" stroke="#191919" stroke-width="1.6" />
+  <path class="fg" d="M 603.5 322.3 L 606.8 325.6 L 612.8 318.2" />
+
+</svg>

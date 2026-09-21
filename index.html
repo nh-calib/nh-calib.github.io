@@ -13,6 +13,7 @@
   <header class="topbar">
     <a class="wordmark" href="#top">NH-Calib</a>
     <nav aria-label="Page navigation">
+      <a href="#limits">Problem</a>
       <a href="#method">Method</a>
       <a href="#results">Results</a>
       <a href="wiki/index.html">Algorithm wiki</a>
@@ -39,6 +40,97 @@
         Only relative Y requires association between sensors; Z is unobservable under planar motion.
       </figcaption>
     </figure>
+
+    <section class="content-section" id="limits">
+      <h2>Where existing calibration stops</h2>
+      <p class="lead">
+        Sensors mounted on one vehicle rarely share a field of view or a modality, and mounts drift after
+        maintenance. Three constraints decide whether a calibration method can run on such a platform at all.
+      </p>
+
+      <div class="table-scroll" role="region" aria-label="Constraints of calibration approaches" tabindex="0">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>Approach</th>
+              <th>Runs without a target</th>
+              <th>Runs without shared field of view</th>
+              <th>Parameters coupled to inter-sensor time alignment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Target-based</th>
+              <td><span class="no">&#10007;</span> prepared board or marker</td>
+              <td><span class="no">&#10007;</span> target must be co-visible</td>
+              <td><span class="na">&mdash;</span> static capture</td>
+            </tr>
+            <tr>
+              <th>Registration / overlap</th>
+              <td><span class="yes">&#10003;</span></td>
+              <td><span class="no">&#10007;</span> needs co-visible structure</td>
+              <td><span class="part">&#9679;</span> maps are built from timed motion</td>
+            </tr>
+            <tr>
+              <th>Hand&ndash;eye / trajectory</th>
+              <td><span class="yes">&#10003;</span></td>
+              <td><span class="yes">&#10003;</span></td>
+              <td><span class="no">&#10007;</span> all six, through trajectory matching</td>
+            </tr>
+            <tr class="ours">
+              <th>NH-Calib</th>
+              <td><span class="yes">&#10003;</span> any turning drive</td>
+              <td><span class="yes">&#10003;</span> no common scene</td>
+              <td><span class="yes">&#10003;</span> one of five observable, relative Y only</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="result-note">
+        Columns state what a method requires of the platform, not its accuracy. Baseline accuracy under the same
+        driving data is reported on the <a href="wiki/results.html">wiki results page</a>.
+      </p>
+
+      <div class="card-grid">
+        <article class="card">
+          <img src="assets/cards/card1-no-target.svg" alt="Left: a sensor observing a checkerboard target on a tripod in a calibration room. Right: a vehicle driving a turn on an ordinary road.">
+          <div class="card-body">
+          <h3>No target, no calibration site</h3>
+          <p>
+            Wheeled-vehicle motion is the reference. Any log containing ordinary turns carries the information the
+            estimator needs, so a mount change costs a drive rather than a booked facility.
+          </p>
+          </div>
+        </article>
+        <article class="card">
+          <img src="assets/cards/card2-no-shared-fov.svg" alt="Left: two sensors with non-intersecting fields of view and no shared points. Right: their two ego-motion paths, offset by the extrinsic to be estimated.">
+          <div class="card-body">
+          <h3>No shared field of view</h3>
+          <p>
+            Sensors are related through the chassis they are bolted to, not through a scene they both observe.
+            Front and rear LiDARs, or LiDAR against radar, are handled the same way.
+          </p>
+          </div>
+        </article>
+        <article class="card">
+          <img src="assets/cards/card3-alignment-scope.svg" alt="Six degree-of-freedom chips: X, roll, pitch and yaw marked sensor-local; Y marked as requiring inter-sensor time alignment; Z marked unobservable under planar motion.">
+          <div class="card-body">
+          <h3>Timing touches one parameter</h3>
+          <p>
+            X, roll, pitch and yaw come from each sensor&rsquo;s own twist, so they never cross a clock boundary.
+            Relative Y is the single parameter estimated across sensors, and the only one that inherits the
+            alignment error. The <a href="wiki/observability.html">observability</a> and
+            <a href="wiki/time-alignment.html">time-alignment</a> pages give the derivation and the measured
+            sensitivity.
+          </p>
+          <p class="guard">
+            Alignment stays a method-neutral preprocessing step: this counts how many parameters depend on it, and
+            is not a claim of robustness to bad synchronization.
+          </p>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <section class="text-section" id="abstract">
       <h2>Abstract</h2>
