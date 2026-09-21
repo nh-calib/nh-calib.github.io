@@ -182,6 +182,10 @@ footer {
   margin-top: 38px;
 }
 
+/* problem section: cards first, constraint table after */
+#problem .card-grid + .table-scroll { margin-top: 36px; }
+#problem .result-note { margin-bottom: 0; }
+
 .card {
   display: flex;
   flex-direction: column;

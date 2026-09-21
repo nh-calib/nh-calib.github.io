@@ -63,6 +63,44 @@
         maintenance. Three constraints decide whether a calibration method can run on such a platform at all.
       </p>
 
+      <div class="card-grid">
+        <article class="card">
+          <div class="card-body">
+          <h3>No target, no calibration site</h3>
+          <p>
+            Wheeled-vehicle motion is the reference. Any log containing ordinary turns carries the information the
+            estimator needs, so a mount change costs a drive rather than a booked facility.
+          </p>
+          </div>
+          <img src="assets/cards/card1-no-target.svg" alt="Left: a sensor observing a checkerboard target on a tripod in a calibration room. Right: a vehicle driving a turn on an ordinary road.">
+        </article>
+        <article class="card">
+          <div class="card-body">
+          <h3>No shared field of view</h3>
+          <p>
+            Sensors are related through the chassis they are bolted to, not through a scene they both observe.
+            Front and rear LiDARs, or LiDAR against radar, are handled the same way.
+          </p>
+          </div>
+          <img src="assets/cards/card2-no-shared-fov.svg" alt="Left: two sensors with non-intersecting fields of view and no shared points. Right: their two ego-motion paths, offset by the extrinsic to be estimated.">
+        </article>
+        <article class="card">
+          <div class="card-body">
+          <h3>Timing touches one parameter</h3>
+          <p>
+            X, roll, pitch and yaw come from each sensor&rsquo;s own twist, so they never cross a clock boundary.
+            Relative Y is the single parameter estimated across sensors, and the only one that inherits the
+            alignment error.
+          </p>
+          <p class="guard">
+            Alignment stays a method-neutral preprocessing step: this counts how many parameters depend on it, and
+            is not a claim of robustness to bad synchronization.
+          </p>
+          </div>
+          <img src="assets/cards/card3-alignment-scope.svg" alt="Six degree-of-freedom chips: X, roll, pitch and yaw marked sensor-local; Y marked as requiring inter-sensor time alignment; Z marked unobservable under planar motion.">
+        </article>
+      </div>
+
       <div class="table-scroll" role="region" aria-label="Constraints of calibration approaches" tabindex="0">
         <table class="matrix">
           <thead>
@@ -105,44 +143,6 @@
         Columns state what a method requires of the platform, not its accuracy. Baseline accuracy under the same
         driving data is reported on the <a href="wiki/results.html">wiki results page</a>.
       </p>
-
-      <div class="card-grid">
-        <article class="card">
-          <div class="card-body">
-          <h3>No target, no calibration site</h3>
-          <p>
-            Wheeled-vehicle motion is the reference. Any log containing ordinary turns carries the information the
-            estimator needs, so a mount change costs a drive rather than a booked facility.
-          </p>
-          </div>
-          <img src="assets/cards/card1-no-target.svg" alt="Left: a sensor observing a checkerboard target on a tripod in a calibration room. Right: a vehicle driving a turn on an ordinary road.">
-        </article>
-        <article class="card">
-          <div class="card-body">
-          <h3>No shared field of view</h3>
-          <p>
-            Sensors are related through the chassis they are bolted to, not through a scene they both observe.
-            Front and rear LiDARs, or LiDAR against radar, are handled the same way.
-          </p>
-          </div>
-          <img src="assets/cards/card2-no-shared-fov.svg" alt="Left: two sensors with non-intersecting fields of view and no shared points. Right: their two ego-motion paths, offset by the extrinsic to be estimated.">
-        </article>
-        <article class="card">
-          <div class="card-body">
-          <h3>Timing touches one parameter</h3>
-          <p>
-            X, roll, pitch and yaw come from each sensor&rsquo;s own twist, so they never cross a clock boundary.
-            Relative Y is the single parameter estimated across sensors, and the only one that inherits the
-            alignment error.
-          </p>
-          <p class="guard">
-            Alignment stays a method-neutral preprocessing step: this counts how many parameters depend on it, and
-            is not a claim of robustness to bad synchronization.
-          </p>
-          </div>
-          <img src="assets/cards/card3-alignment-scope.svg" alt="Six degree-of-freedom chips: X, roll, pitch and yaw marked sensor-local; Y marked as requiring inter-sensor time alignment; Z marked unobservable under planar motion.">
-        </article>
-      </div>
       <p class="section-link">
         Derivation and measured sensitivity:
         <a href="wiki/observability.html">observability</a> &middot;
