@@ -177,6 +177,31 @@
           <b>Stage&#8239;2</b> associates turns across sensors and solves relative Y.
         </figcaption>
       </figure>
+      <!-- S0e: motion-plane alignment, the first thing Stage 1 does -->
+      <figure class="hero hero-concept hero-stage0">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_rollpitch_static.svg">
+          <img src="assets/hero/hero_rollpitch.svg"
+               alt="Three panels. Left, a vehicle driving a circle on a locally planar patch of ground, with the rotation axis drawn along the plane normal. Middle, the same vector seen in the frame of a sensor mounted with a tilt: pooled angular-rate samples from the gated turns cluster around a direction off the sensor's vertical axis and split into an in-plane part and a vertical part. Right, the rotation that swings that direction back onto the sensor's vertical; its roll and pitch are the mounting angles, while a turn about the axis itself changes nothing, so yaw is left open.">
+        </picture>
+        <figcaption>
+          Schematic, synthetic values, tilt exaggerated. A turn on a locally planar surface has a single
+          rotation axis &mdash; the plane normal &mdash; and every sensor bolted to the chassis measures that
+          same vector, so a sensor mounted with a tilt sees it spread over all three of its own components.
+          Pooling the angular-rate samples from the gated turn segments gives one representative axis
+          direction, and the rotation that brings that direction back onto the sensor's vertical axis
+          <i>is</i> the mounting roll and pitch. Aligning a single vector can only settle two angles: a
+          rotation about the axis itself leaves the axis where it was, so yaw is not determined here. This
+          step needs no target, no shared field of view and no clock shared with another sensor &mdash; only
+          an agreed sign convention for the axis direction.
+        </figcaption>
+      </figure>
+
+      <p class="stage-bridge">
+        Levelling leaves a planar twist stream in the sensor's own frame, and the rest of Stage&#8239;1 reads
+        the two in-plane parameters straight off it:
+      </p>
+
       <!-- S0c: the Stage-1 mechanism, schematic -->
       <figure class="hero hero-concept hero-stage1">
         <picture>

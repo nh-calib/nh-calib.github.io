@@ -286,6 +286,7 @@ footer {
 
 /* The two stage schematics sit inside the Method section rather than at the top
    of the page, so they need bottom spacing the page-top hero gets from its neighbour */
+.hero-stage0,
 .hero-stage1,
 .hero-stage2 { margin: 8px auto 30px; }
 
