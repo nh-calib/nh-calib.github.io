@@ -10,6 +10,7 @@ stay crisp at any width and can be regenerated after a palette change.
 Writes assets/cards/card1-no-target.svg, card2-no-shared-fov.svg,
 card3-alignment-scope.svg.
 """
+import argparse
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent.parent / "assets" / "cards"
@@ -288,6 +289,14 @@ def card3() -> str:
 
 
 def main() -> None:
+    # The three card SVGs are hand-maintained by the author after this generator
+    # produced the first draft (2026-09-21).  Re-running the generator would silently
+    # discard that work, so an existing file is never overwritten without --force.
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--force", action="store_true",
+                    help="overwrite existing card SVGs (destroys hand edits)")
+    args = ap.parse_args()
+
     OUT.mkdir(parents=True, exist_ok=True)
     files = {
         "card1-no-target.svg": card1(),
@@ -295,8 +304,12 @@ def main() -> None:
         "card3-alignment-scope.svg": card3(),
     }
     for name, text in files.items():
-        (OUT / name).write_text(text, encoding="utf-8")
-        print(f"wrote {OUT / name}  ({len(text)} bytes)")
+        target = OUT / name
+        if target.exists() and not args.force:
+            print(f"skip   {target}  (already exists; pass --force to overwrite)")
+            continue
+        target.write_text(text, encoding="utf-8")
+        print(f"wrote {target}  ({len(text)} bytes)")
 
 
 if __name__ == "__main__":
