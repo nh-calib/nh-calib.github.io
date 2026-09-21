@@ -83,9 +83,6 @@ def _prep():
     d["ylim_can_v"] = (d["cvx"].min() * 3.6 - 1.5, d["cvx"].max() * 3.6 + 1.5)
     d["ylim_can_w"] = (np.degrees(d["cwz"]).min() - 1.0,
                        np.degrees(d["cwz"]).max() + 1.0)
-    d["az_lim"] = (np.degrees(Q["radar_az"].min()) - 3, np.degrees(Q["radar_az"].max()) + 3)
-    lo, hi = np.percentile(Q["radar_vr"].astype(float), [0.5, 99.5])
-    d["vr_lim"] = (lo - 1.5, hi + 1.5)
     return d
 
 
@@ -138,9 +135,7 @@ def render(i):
 
     # ------------------------------------------------------------- band A
     pts = Q["a2d2_cloud"][i]
-    o = np.argsort(np.nan_to_num(pts[:, 2], nan=-99))
-    A0.scatter(pts[o, 0], pts[o, 1], s=1.7, c=pts[o, 2], cmap="viridis",
-               vmin=-2.4, vmax=0.6, linewidths=0, alpha=0.9, rasterized=True)
+    S.lidar_height_scatter(A0, pts)
     for rr in (20, 40, 60):
         th = np.linspace(-np.pi / 2, np.pi / 2, 120)
         A0.plot(rr * np.cos(th), rr * np.sin(th), color="#b9c2cf", lw=0.5,
@@ -216,29 +211,29 @@ def render(i):
     a, b = int(Q["radar_off"][k]), int(Q["radar_off"][k + 1])
     az = Q["radar_az"][a:b].astype(float)
     vr = Q["radar_vr"][a:b].astype(float)
+    rng = Q["radar_rng"][a:b].astype(float)
     inl = Q["radar_inl"][a:b].astype(bool)
     fit = Q["radar_fit"][k]
-    B0.scatter(np.degrees(az[~inl]), vr[~inl], s=13, facecolor="none",
-               edgecolor="#bda5a5", linewidths=0.8, zorder=2)
-    B0.scatter(np.degrees(az[inl]), vr[inl], s=13, color=S.C_RADAR, alpha=0.72,
-               linewidths=0, zorder=3)
-    aa = np.linspace(D["az_lim"][0], D["az_lim"][1], 200) * np.pi / 180.0
-    B0.plot(np.degrees(aa), -(fit[0] * np.cos(aa) + fit[1] * np.sin(aa)),
-            color="#7f1d1d", lw=1.8, zorder=4)
-    B0.set_xlim(*D["az_lim"])
-    B0.set_ylim(*D["vr_lim"])
-    B0.set_xlabel("azimuth [deg]  (sensor frame)", fontsize=7.8)
-    B0.set_ylabel("radial speed $v_r$ [m/s]", fontsize=7.8)
-    S.tidy(B0)
-    B0.legend(handles=[Line2D([], [], marker="o", ls="none", mfc="none", mec="#bda5a5",
-                              label="moving, rejected"),
-                       Line2D([], [], marker="o", ls="none", color=S.C_RADAR,
-                              label="static, used"),
-                       Line2D([], [], color="#7f1d1d", lw=1.8, label="ego-velocity fit")],
+    picked = S.radar_doppler_bev(B0, az, vr, rng)
+    B0.legend(handles=[Line2D([], [], marker="o", ls="none", color="#94a3b8",
+                              alpha=0.5, label="all detections"),
+                       Line2D([], [], marker="o", ls="none",
+                              color=S.DOPPLER_CMAP(S.DOPPLER_NORM(-6)),
+                              label="selected + Doppler vector")],
               loc="upper right", fontsize=7.0, frameon=False, handlelength=1.3,
               borderpad=0.1, labelspacing=0.22)
-    S.head(B0, "Radar detections", "live scan, %d returns, %.0f%% inliers"
-           % (len(az), 100.0 * inl.mean()), S.C_RADAR, ("paper front end", S.BADGE_PAPER))
+    can_v = float(np.interp(float(Q["radar_t"][k]), D["ct"], D["cvx"]))
+    B0.text(0.028, 0.045,
+            "fitted ego-velocity\n"
+            "$v$ = (%.2f, %.2f) m/s\n"
+            "$|v|$ %.2f  ·  CAN %.2f m/s"
+            % (fit[0], fit[1], float(np.hypot(fit[0], fit[1])), can_v),
+            transform=B0.transAxes, ha="left", va="bottom", fontsize=7.2,
+            color=S.FG, linespacing=1.45, zorder=6,
+            bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=S.C_RADAR,
+                      lw=0.8, alpha=0.94))
+    S.head(B0, "Radar BEV", "live BEV, %d returns; %d Doppler vectors"
+           % (len(az), len(picked)), S.C_RADAR, ("paper front end", S.BADGE_PAPER))
 
     lo = min(max(T - 1.0, 0.0), WIN - 2.0)
     zm = (D["ct"] >= lo) & (D["ct"] <= lo + 2.0)

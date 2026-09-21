@@ -200,13 +200,13 @@
       </div>
       <figure class="module-figure" id="fig-frontends">
         <img src="assets/frontends_real.png"
-             alt="Two tinted boxes, one per drive. The upper box is A2D2: a forward LiDAR scan coloured by height, twenty-one GNSS position fixes tracing a roundabout, the dead-reckoned trajectory with the LiDAR and GNSS paths almost on top of each other, and a two-row strip of speed and yaw rate. The lower box is RadarScenes: one radar scan plotted as detection azimuth against radial velocity with a robust cosine fit, a two-second zoom of CAN wheel-speed and yaw-rate messages, the dead-reckoned trajectory for radar and CAN, and the same two-row strip.">
+             alt="Two tinted boxes, one per drive. The upper A2D2 box shows a forward LiDAR scan coloured grey to green to yellow by height, GNSS fixes, dead-reckoned trajectories and twist. The lower RadarScenes box shows all radar detections as faint grey BEV points, selected coloured points with radial-Doppler vectors, CAN signals, trajectories and the same twist interface.">
         <figcaption>
           Four front ends, two drives, one interface. Each tinted box is a single drive, so nothing has to be
           matched across the divider. <i>A2D2 drive 20180810_150607</i>: KISS-ICP on FRONT_CENTER against the
           bus GNSS fixes. <i>RadarScenes sequence&#8239;1</i>: Doppler ego-velocity from a single 2-D radar
           against the vehicle bus. The two left panels of a box are what that sensor natively measures &mdash;
-          a point cloud, a scatter of fixes, an azimuth/Doppler cosine, two bus scalars. The third panel is
+          a height-coloured point cloud, a scatter of fixes, a radar BEV with selected Doppler vectors, and two bus scalars. The third panel is
           drawn identically in both boxes on purpose: whatever went in, what comes out is a planar trajectory
           dead-reckoned from <i>(v,&#8239;&omega;)</i>. On A2D2 the two front ends cover 175&#8239;m and
           354&deg; of heading at <b>8.75</b> against <b>8.82&#8239;m/s</b> of path speed and a median yaw-rate
@@ -220,7 +220,7 @@
       <figure class="hero hero-real hero-frontends">
         <video class="hero-media" autoplay muted loop playsinline preload="none"
                poster="assets/hero/hero_frontends_real.png"
-               aria-label="The same two boxes animated over the twenty second window. The A2D2 panel steps through live LiDAR scans while its GNSS fixes appear one by one; the RadarScenes panel steps through live radar scans with the Doppler fit re-solved each time and the CAN view slides along. In both boxes the trajectory panel grows a fading trail and a cursor walks left to right across the twist strip.">
+               aria-label="The same two boxes animated over the twenty second window. A2D2 LiDAR points change from grey to green to yellow with height. RadarScenes detections remain faint grey except for a sparse coloured subset carrying radial-Doppler arrows; the fitted ego-velocity is updated every scan. In both boxes the trajectory trail grows and the twist cursor advances.">
           <source src="assets/hero/hero_frontends_real.webm" type="video/webm">
           <source src="assets/hero/hero_frontends_real.mp4" type="video/mp4">
         </video>

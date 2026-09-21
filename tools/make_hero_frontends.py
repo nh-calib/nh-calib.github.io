@@ -24,6 +24,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyBboxPatch
 
@@ -36,6 +37,11 @@ C_LIDAR, C_GNSS = "#2563eb", "#0891b2"
 C_RADAR, C_CAN = "#dc2626", "#0f766e"
 C_YAW = "#7c3aed"
 BADGE_PAPER, BADGE_SAME = "#1d4ed8", "#0f766e"
+HEIGHT_CMAP = LinearSegmentedColormap.from_list(
+    "lidar_height_gray_green_yellow", ["#9ca3af", "#22c55e", "#fde047"]
+)
+DOPPLER_CMAP = plt.get_cmap("coolwarm")
+DOPPLER_NORM = Normalize(vmin=-8.0, vmax=8.0)
 
 BANDS = {
     "a2d2": dict(accent="#3730a3", tint="#f4f6ff",
@@ -110,6 +116,57 @@ def tidy(ax, grid=True):
         ax.grid(True, color=GRID, lw=0.6)
         ax.set_axisbelow(True)
     ax.tick_params(length=2.6, labelsize=7.6)
+
+
+def lidar_height_scatter(ax, pts, size=1.7):
+    """Low points are grey, mid-height structure green, and high returns yellow."""
+    good = np.isfinite(pts).all(axis=1)
+    p = pts[good]
+    order = np.argsort(p[:, 2])
+    return ax.scatter(p[order, 0], p[order, 1], s=size, c=p[order, 2],
+                      cmap=HEIGHT_CMAP, vmin=-2.4, vmax=0.6,
+                      linewidths=0, alpha=0.90, rasterized=True)
+
+
+def select_doppler_points(az, vr, rng, n=14):
+    """Choose a small, deterministic and angularly distributed Doppler subset."""
+    valid = np.isfinite(az) & np.isfinite(vr) & np.isfinite(rng) & (rng > 2.0) & (rng < 80.0)
+    ids = np.flatnonzero(valid)
+    if ids.size <= n:
+        return ids
+    edges = np.linspace(float(az[ids].min()), float(az[ids].max()), n + 1)
+    chosen = []
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        cand = ids[(az[ids] >= lo) & (az[ids] < hi)]
+        if cand.size:
+            chosen.append(int(cand[np.argmax(np.abs(vr[cand]))]))
+    return np.asarray(chosen, dtype=int)
+
+
+def radar_doppler_bev(ax, az, vr, rng, n_highlight=14):
+    """All detections in grey; a sparse subset carries colour and LOS Doppler arrows."""
+    x, y = rng * np.cos(az), rng * np.sin(az)
+    good = np.isfinite(x) & np.isfinite(y) & np.isfinite(vr)
+    ax.scatter(x[good], y[good], s=5.0, color="#94a3b8", alpha=0.25,
+               linewidths=0, rasterized=True, zorder=2)
+    pick = select_doppler_points(az, vr, rng, n=n_highlight)
+    if pick.size:
+        colors = DOPPLER_CMAP(DOPPLER_NORM(vr[pick]))
+        ax.scatter(x[pick], y[pick], s=24, c=colors, edgecolors="white",
+                   linewidths=0.55, zorder=4)
+        arrow_scale = 0.90
+        ax.quiver(x[pick], y[pick], arrow_scale * vr[pick] * np.cos(az[pick]),
+                  arrow_scale * vr[pick] * np.sin(az[pick]), color=colors,
+                  angles="xy", scale_units="xy", scale=1.0, width=0.006,
+                  headwidth=3.8, headlength=4.5, headaxislength=4.0, zorder=3)
+    ax.plot([0], [0], marker="s", ms=5.0, color=C_RADAR, zorder=5)
+    ax.set_xlim(-4, 82)
+    ax.set_ylim(-52, 52)
+    ax.set_aspect("equal")
+    ax.set_xlabel("x [m]  (sensor frame)", fontsize=7.8)
+    ax.set_ylabel("y [m]", fontsize=7.8)
+    tidy(ax, grid=False)
+    return pick
 
 
 def head(ax, text, sub, color, badge=None):
@@ -197,6 +254,12 @@ def main():
                                   / (gft[-1] - gft[0])),
         "a2d2_path_len": float(np.sum(np.hypot(np.diff(ax_l), np.diff(ay_l)))),
         "rs_path_len": float(np.sum(np.hypot(np.diff(bx_r), np.diff(by_r)))),
+        # fitted ego-velocity of the representative scan (sensor frame, +y forward)
+        "rs_scan_vx": float(z["rs_scan_fit"][0]),
+        "rs_scan_vy": float(z["rs_scan_fit"][1]),
+        "rs_scan_vmag": float(np.hypot(*z["rs_scan_fit"])),
+        "rs_scan_can_v": float(np.interp(float(np.atleast_1d(z["rs_scan_t"])[0]),
+                                         ct, cvx)),
     }
 
     fig = plt.figure(figsize=(16.2, 9.3), dpi=135)
@@ -227,9 +290,7 @@ def main():
 
     # ============================================================== band A: A2D2
     pts = z["a2d2_scan"]
-    order = np.argsort(pts[:, 2])
-    A0.scatter(pts[order, 0], pts[order, 1], s=1.7, c=pts[order, 2], cmap="viridis",
-               vmin=-2.4, vmax=0.6, linewidths=0, alpha=0.9, rasterized=True)
+    lidar_height_scatter(A0, pts)
     for rr in (20, 40, 60):
         th = np.linspace(-np.pi / 2, np.pi / 2, 120)
         A0.plot(rr * np.cos(th), rr * np.sin(th), color="#b9c2cf", lw=0.5,
@@ -291,23 +352,30 @@ def main():
          % (res["a2d2_v_mean_lidar"], res["a2d2_v_mean_gnss"], res["a2d2_wz_mismatch"]), FG)
 
     # ======================================================= band B: RadarScenes
-    az, vr, inl = z["rs_scan_az"], z["rs_scan_vr"], z["rs_scan_inl"]
+    az, vr, rng, inl = (z["rs_scan_az"], z["rs_scan_vr"], z["rs_scan_rng"],
+                         z["rs_scan_inl"])
     fit = z["rs_scan_fit"]
-    B0.scatter(np.degrees(az[~inl]), vr[~inl], s=13, facecolor="none",
-               edgecolor="#bda5a5", linewidths=0.8, zorder=2, label="moving, rejected")
-    B0.scatter(np.degrees(az[inl]), vr[inl], s=13, color=C_RADAR, alpha=0.72,
-               linewidths=0, zorder=3, label="static, used")
-    aa = np.linspace(az.min(), az.max(), 200)
-    B0.plot(np.degrees(aa), -(fit[0] * np.cos(aa) + fit[1] * np.sin(aa)),
-            color="#7f1d1d", lw=1.8, zorder=4, label="ego-velocity fit")
-    B0.set_xlabel("azimuth [deg]  (sensor frame)", fontsize=7.8)
-    B0.set_ylabel("radial speed $v_r$ [m/s]", fontsize=7.8)
-    tidy(B0)
-    B0.legend(loc="upper right", fontsize=7.0, frameon=False, handlelength=1.3,
-              borderpad=0.1, labelspacing=0.22)
-    head(B0, "Radar detections",
-         "one scan, %d returns, %.0f%% inliers, residual %.3f m/s"
-         % (meta["rs_scan_n"], 100 * meta["rs_scan_inlier"], meta["rs_scan_res_rms"]),
+    picked = radar_doppler_bev(B0, az, vr, rng)
+    B0.legend(handles=[
+        Line2D([], [], marker="o", ls="none", color="#94a3b8", alpha=0.5,
+               label="all detections"),
+        Line2D([], [], marker="o", ls="none", color=DOPPLER_CMAP(DOPPLER_NORM(-6)),
+               label="selected + Doppler vector")],
+        loc="upper right", fontsize=7.0, frameon=False, handlelength=1.3,
+        borderpad=0.1, labelspacing=0.22)
+    B0.text(0.028, 0.045,
+            "fitted ego-velocity\n"
+            "$v$ = (%.2f, %.2f) m/s\n"
+            "$|v|$ %.2f  ·  CAN %.2f m/s"
+            % (res["rs_scan_vx"], res["rs_scan_vy"], res["rs_scan_vmag"],
+               res["rs_scan_can_v"]),
+            transform=B0.transAxes, ha="left", va="bottom", fontsize=7.2,
+            color=FG, linespacing=1.45, zorder=6,
+            bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=C_RADAR,
+                      lw=0.8, alpha=0.94))
+    head(B0, "Radar BEV",
+         "one BEV scan, %d returns; %d highlighted vectors"
+         % (meta["rs_scan_n"], len(picked)),
          C_RADAR, ("paper front end", BADGE_PAPER))
 
     zm = (ct >= 6.0) & (ct <= 8.0)
