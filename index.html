@@ -305,32 +305,52 @@
         <h4>One residual, one minimum</h4>
         <p>Both slopes come from a single residual, <i>r</i> = sin&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> + cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i> &minus; <i>&omega;&#8201;p<sub>x</sub></i> + slip, driven to zero over all gated turn samples with a robust solver. A shared slip coefficient absorbs the speed-dependent departure from the ideal line.</p>
       </div>
-      <figure class="hero hero-real hero-stage1-knobs">
-        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
-               poster="assets/hero/hero_m3_knobs.png"
-               aria-label="Three panels on the 697 real A2D2 FRONT_CENTER turn samples. Left, one fast reading split into its vehicle-frame lateral part (cos psi times lateral reading plus sin psi times forward reading plus slip) next to the lever-arm prediction p_x times omega, with the gap between them. Middle, all samples as yaw rate against vehicle-frame lateral speed, coloured by forward speed, with the line p_x times omega. First only p_x is swept: the line pivots through the origin while the cloud stays put. Then only psi is swept: the line stays put while the cloud shifts, the fastest samples furthest. Finally both start wrong and a robust Gauss-Newton solve walks them together until every sample lies on the line. Right, the Huber cost of the residual over psi and p_x, with the knob path traced on it and a single minimum at psi 1.23 degrees and p_x 1.668 metres.">
-          <source src="assets/hero/hero_m3_knobs.webm" type="video/webm">
-          <source src="assets/hero/hero_m3_knobs.mp4" type="video/mp4">
-        </video>
-        <img class="hero-still" src="assets/hero/hero_m3_knobs.png"
-             alt="Both knobs at the minimum: every one of the 697 real turn samples lies on the line p_x times omega, residual RMS 0.026 metres per second, at psi 1.23 degrees and p_x 1.669 metres.">
-        <figcaption>A2D2 <b>FRONT_CENTER</b>, 697 gated samples. Changing <i>p<sub>x</sub></i> pivots the line; changing <i>&psi;</i> shifts the points (fast samples most). Because the two knobs move the plot differently, the cost has a single minimum: <i>&psi;</i> 1.230&deg;, <i>p<sub>x</sub></i> 1.668&#8239;m, residual RMS 0.026&#8239;m/s.</figcaption>
+      <figure class="hero hero-real hero-stage1-knobs">
+
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+
+               poster="assets/hero/hero_m3_knobs.png"
+
+               aria-label="Three panels on the 697 real A2D2 FRONT_CENTER turn samples. Left, one fast reading split into its vehicle-frame lateral part (cos psi times lateral reading plus sin psi times forward reading plus slip) next to the lever-arm prediction p_x times omega, with the gap between them. Middle, all samples as yaw rate against vehicle-frame lateral speed, coloured by forward speed, with the line p_x times omega. First only p_x is swept: the line pivots through the origin while the cloud stays put. Then only psi is swept: the line stays put while the cloud shifts, the fastest samples furthest. Finally both start wrong and a robust Gauss-Newton solve walks them together until every sample lies on the line. Right, the Huber cost of the residual over psi and p_x, with the knob path traced on it and a single minimum at psi 1.23 degrees and p_x 1.668 metres.">
+
+          <source src="assets/hero/hero_m3_knobs.webm" type="video/webm">
+
+          <source src="assets/hero/hero_m3_knobs.mp4" type="video/mp4">
+
+        </video>
+
+        <img class="hero-still" src="assets/hero/hero_m3_knobs.png"
+
+             alt="Both knobs at the minimum: every one of the 697 real turn samples lies on the line p_x times omega, residual RMS 0.026 metres per second, at psi 1.23 degrees and p_x 1.669 metres.">
+
+        <figcaption>A2D2 <b>FRONT_CENTER</b>, 697 gated samples. Changing <i>p<sub>x</sub></i> pivots the line; changing <i>&psi;</i> shifts the points (fast samples most). Because the two knobs move the plot differently, the cost has a single minimum: <i>&psi;</i> 1.230&deg;, <i>p<sub>x</sub></i> 1.668&#8239;m, residual RMS 0.026&#8239;m/s.</figcaption>
+
       </figure>
       <div class="module module-step">
         <p class="step-label">Real data 2</p>
         <h4>Replayed along the drive</h4>
         <p>The same solve, accumulated turn by turn over one A2D2 drive. Both lines settle as more turns arrive.</p>
       </div>
-      <figure class="hero hero-real hero-stage1-real">
-        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
-               poster="assets/hero/hero_pxyaw_real.png"
-               aria-label="Three panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Middle, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres. Right, the same samples plotted as sensor longitudinal speed against lateral speed with the turn part removed: faint grey raw readings scatter with the turn, while the corrected points of left and right turns collapse onto one line through the origin whose slope settles on minus 0.0215, a yaw of 1.230 degrees against a ground truth of 1.225.">
-          <source src="assets/hero/hero_pxyaw_real.webm" type="video/webm">
-          <source src="assets/hero/hero_pxyaw_real.mp4" type="video/mp4">
-        </video>
-        <img class="hero-still" src="assets/hero/hero_pxyaw_real.png"
-             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, a turn-rate slope of 1.668 metres against a ground truth of 1.711 metres, and a longitudinal-speed slope of minus 0.0215, a yaw of 1.230 degrees against 1.225.">
-        <figcaption>A2D2 <b>FRONT_CENTER</b> only, 11 gated turns, 697 samples. Middle: lateral speed against turn rate, slope <i>p<sub>x</sub></i> = 1.668&#8239;m (ground truth 1.711&#8239;m). Right: lateral speed with the turn part removed, against forward speed; left and right turns fall on one line, <i>&psi;</i> = 1.230&deg; (ground truth 1.225&deg;). Both values come from one joint robust solve; each panel is drawn at the other parameter&rsquo;s solution.</figcaption>
+      <figure class="hero hero-real hero-stage1-real">
+
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+
+               poster="assets/hero/hero_pxyaw_real.png"
+
+               aria-label="Three panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Middle, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres. Right, the same samples plotted as sensor longitudinal speed against lateral speed with the turn part removed: faint grey raw readings scatter with the turn, while the corrected points of left and right turns collapse onto one line through the origin whose slope settles on minus 0.0215, a yaw of 1.230 degrees against a ground truth of 1.225.">
+
+          <source src="assets/hero/hero_pxyaw_real.webm" type="video/webm">
+
+          <source src="assets/hero/hero_pxyaw_real.mp4" type="video/mp4">
+
+        </video>
+
+        <img class="hero-still" src="assets/hero/hero_pxyaw_real.png"
+
+             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, a turn-rate slope of 1.668 metres against a ground truth of 1.711 metres, and a longitudinal-speed slope of minus 0.0215, a yaw of 1.230 degrees against 1.225.">
+
+        <figcaption>A2D2 <b>FRONT_CENTER</b> only, 11 gated turns, 697 samples. Middle: lateral speed against turn rate, slope <i>p<sub>x</sub></i> = 1.668&#8239;m (ground truth 1.711&#8239;m). Right: lateral speed with the turn part removed, against forward speed; left and right turns fall on one line, <i>&psi;</i> = 1.230&deg; (ground truth 1.225&deg;). Both values come from one joint robust solve; each panel is drawn at the other parameter&rsquo;s solution.</figcaption>
+
       </figure>
 
       <!-- 5 ------------------------------------------------------------ -->
@@ -523,6 +543,11 @@
   <footer>
     <span>NH-Calib</span>
     <span>Last updated September 2026</span>
+    <p class="ai-notice">
+      Figures, animations, videos and the text of this page were produced with AI assistance
+      (Claude, Anthropic; ChatGPT, OpenAI). All analyses, experiments and results were produced
+      and verified by the authors.
+    </p>
   </footer>
 </body>
 </html>

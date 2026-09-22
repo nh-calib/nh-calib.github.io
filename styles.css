@@ -156,6 +156,15 @@ footer {
   border-top: 1px solid var(--rule);
   color: var(--muted);
   font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.ai-notice {
+  width: 100%;
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
 }
 
 /* --- "Where existing calibration stops": constraint matrix + cards --- */

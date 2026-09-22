@@ -219,6 +219,7 @@ PAGE_TPL = """<!doctype html>
 <div class="pagefoot">
 <span>Compiled from the project design note and the manuscript. Last updated {updated}.</span>
 <span>Numeric values are reference-implementation defaults unless the page states otherwise.</span>
+<span>Figures, animations and page text were produced with AI assistance (Claude, Anthropic; ChatGPT, OpenAI); all analyses, experiments and results were produced and verified by the authors.</span>
 </div>
 </article>
 </main>
