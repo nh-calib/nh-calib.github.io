@@ -118,19 +118,58 @@ def frame(px, title, kicker, notes) -> str:
     return out
 
 
+# --- car illustration ---------------------------------------------------
+def car_top() -> str:
+    """Top-view car, nose to page +x, same footprint as the old chassis box."""
+    x0, x1 = CAR[0] - 70, CAR[0] + LEVER + 80
+    y0, y1 = CAR[1] - 62, CAR[1] + 62
+    xf = CAR[0] + 225                                  # front axle
+    out = ""
+    for wx in (CAR[0], xf):                            # wheels, outside the body
+        for wy in (y0 - 9, y1 - 9):
+            out += (f'<rect x="{fmt(wx - 24)}" y="{fmt(wy)}" width="48" height="18" rx="6" '
+                    f'class="tyre"/>')
+    body = (f"M {fmt(x0 + 26)} {fmt(y0)} L {fmt(x1 - 64)} {fmt(y0)} "
+            f"Q {fmt(x1)} {fmt(y0)} {fmt(x1)} {fmt(y0 + 42)} L {fmt(x1)} {fmt(y1 - 42)} "
+            f"Q {fmt(x1)} {fmt(y1)} {fmt(x1 - 64)} {fmt(y1)} L {fmt(x0 + 26)} {fmt(y1)} "
+            f"Q {fmt(x0)} {fmt(y1)} {fmt(x0)} {fmt(y1 - 26)} L {fmt(x0)} {fmt(y0 + 26)} "
+            f"Q {fmt(x0)} {fmt(y0)} {fmt(x0 + 26)} {fmt(y0)} Z")
+    out += f'<path d="{body}" class="body"/>'
+    # greenhouse: rear window, roof, windshield
+    rw0, rw1, ws0, ws1 = x0 + 20, x0 + 46, CAR[0] + 118, CAR[0] + 152
+    out += (f'<path d="M {fmt(rw1)} {fmt(y0 + 14)} L {fmt(rw0)} {fmt(y0 + 26)} L {fmt(rw0)} '
+            f'{fmt(y1 - 26)} L {fmt(rw1)} {fmt(y1 - 14)} Z" class="glass"/>'
+            f'<rect x="{fmt(rw1 + 4)}" y="{fmt(y0 + 12)}" width="{fmt(ws0 - rw1 - 8)}" '
+            f'height="{fmt(y1 - y0 - 24)}" rx="12" class="roof"/>'
+            f'<path d="M {fmt(ws0)} {fmt(y0 + 14)} L {fmt(ws1)} {fmt(y0 + 28)} L {fmt(ws1)} '
+            f'{fmt(y1 - 28)} L {fmt(ws0)} {fmt(y1 - 14)} Z" class="glass"/>')
+    for my, dy in ((y0, -4), (y1, 4)):                 # mirrors
+        out += f'<ellipse cx="{fmt(ws0 + 4)}" cy="{fmt(my + dy)}" rx="11" ry="5" class="tyre"/>'
+    for hy in (y0 + 14, y1 - 28):                      # headlights
+        out += f'<rect x="{fmt(x1 - 9)}" y="{fmt(hy)}" width="7" height="14" rx="3" class="lamp"/>'
+    # rear axle = the chassis reference point
+    out += (f'<line x1="{fmt(CAR[0])}" y1="{fmt(y0 - 4)}" x2="{fmt(CAR[0])}" y2="{fmt(y1 + 4)}" '
+            f'class="axle"/>'
+            f'<circle cx="{fmt(CAR[0])}" cy="{fmt(CAR[1])}" r="9" class="ink-fill"/>')
+    return out
+
+
+def ghost(on, hold, ghost_op=0.22, rise=0.18):
+    """Opacity 0 -> 1 at `on`, dims to a ghost at `hold`, stays until the loop ends."""
+    times = [0.0, on, on + rise, hold, hold + 0.3, LOOP - 0.25, LOOP]
+    vals = [0, 0, 1, 1, ghost_op, ghost_op, 0]
+    return (f'<animate attributeName="opacity" dur="{LOOP}s" repeatCount="indefinite" '
+            f'calcMode="linear" keyTimes="{kt(times)}" values="{";".join(str(v) for v in vals)}"/>')
+
+
 # --- panel A ------------------------------------------------------------
 def panel_a(animated: bool) -> str:
     sx, sy = SEN
     out = frame(PA_X, "Sensor mounted at yaw &#968;",
                 "the body moves along its heading; the sensor sees it rotated",
-                ["blue: the turn part &#969;&#8201;p&#8202;x, read off the rate plot",
-                 "of this same sensor and removed first"])
-    # chassis
-    out += (f'<rect x="{fmt(CAR[0] - 70)}" y="{fmt(CAR[1] - 62)}" width="{fmt(LEVER + 150)}" '
-            f'height="124" rx="22" class="body"/>'
-            f'<line x1="{fmt(CAR[0])}" y1="{fmt(CAR[1] - 62)}" x2="{fmt(CAR[0])}" '
-            f'y2="{fmt(CAR[1] + 62)}" class="axle"/>'
-            f'<circle cx="{fmt(CAR[0])}" cy="{fmt(CAR[1])}" r="9" class="ink-fill"/>')
+                ["grey: raw sensor velocity &#8212; its direction swings every turn",
+                 "remove blue &#969;&#8201;p&#8202;x: it always points at &#968; from x&#771;"])
+    out += car_top()
     # heading reference line through the sensor
     out += (f'<line x1="{fmt(sx)}" y1="{fmt(sy)}" x2="{fmt(sx + VL + 60)}" y2="{fmt(sy)}" '
             f'class="rule-dash"/>')
@@ -143,10 +182,10 @@ def panel_a(animated: bool) -> str:
             + text(-10, -130, "y&#771;", "syma")
             + '</g>')
     # psi wedge between heading and sensor x~
-    r = 92.0
+    r = 70.0
     out += (f'<path d="M {fmt(sx + r)} {fmt(sy)} A {fmt(r)} {fmt(r)} 0 0 0 '
             f'{fmt(sx + r * CP)} {fmt(sy - r * SP)}" class="fg-thin"/>'
-            + text(sx + r + 10, sy - 10, "&#968;", "sym"))
+            + text(sx + r + 4, sy - 6, "&#968;", "sym"))
 
     pts = speed_profile()
     last_v = STEPS[-1][0]
@@ -186,18 +225,23 @@ def panel_a(animated: bool) -> str:
     out += sym(sx + 14, sy + VL * SP * CP + 40, "&#7805;", "y", "syma", 16.0)
 
     # the turn part omega*p_x (vehicle-lateral = page up for a left turn), per step
-    for k, (_v, lat) in enumerate(STEPS):
+    for k, (v, lat) in enumerate(STEPS):
         t = T0 + k * DT
-        y2 = sy - LL * lat
-        arrow = (f'<line x1="{fmt(sx)}" y1="{fmt(sy)}" x2="{fmt(sx)}" y2="{fmt(y2)}" '
+        tx, y2 = sx + VL * v, sy - LL * lat
+        raw = (f'<line x1="{fmt(sx)}" y1="{fmt(sy)}" x2="{fmt(tx)}" y2="{fmt(y2)}" '
+               f'class="rawv" marker-end="url(#tip)"/>')
+        arrow = (f'<line x1="{fmt(tx)}" y1="{fmt(sy)}" x2="{fmt(tx)}" y2="{fmt(y2)}" '
                  f'class="lat" marker-end="url(#tip-b)"/>')
         ly = (sy + y2) / 2 + 8
-        lab = (text(sx - 44, ly, "&#969;&#8201;p", "symb", "end")
-               + text(sx - 42, ly + 9, "x", "symb-s"))
+        lab = (text(tx + 12, ly, "&#969;&#8201;p", "symb")
+               + text(tx + 58, ly + 9, "x", "symb-s"))
         if animated:
-            out += f'<g opacity="0">{fade(t + 0.15, t + 1.25)}{arrow}{lab}</g>'
-        elif k == len(STEPS) - 1:
-            out += f'<g opacity="0.35">{arrow}{lab}</g>'
+            out += f'<g opacity="0">{ghost(t + 0.5, t + 1.25)}{raw}</g>'
+            out += f'<g opacity="0">{fade(t + 0.5, t + 1.45)}{arrow}{lab}</g>'
+        else:
+            out += f'<g opacity="{0.9 if k == len(STEPS) - 1 else 0.3}">{raw}</g>'
+            if k == len(STEPS) - 1:
+                out += f'<g opacity="0.45">{arrow}{lab}</g>'
     return out
 
 
@@ -264,6 +308,11 @@ STYLE = f"""
     .panel {{ fill: {PAPER}; stroke: {RULE}; stroke-width: 1.6; }}
     .strip {{ fill: {SOFT}; stroke: {RULE}; stroke-width: 1.6; }}
     .body {{ fill: {SOFT}; stroke: {RULE}; stroke-width: 1.8; }}
+    .tyre {{ fill: {INK}; }}
+    .glass {{ fill: #dde3ea; stroke: {RULE}; stroke-width: 1.4; }}
+    .roof {{ fill: #ececea; stroke: {RULE}; stroke-width: 1.4; }}
+    .lamp {{ fill: #f2d98a; }}
+    .rawv {{ fill: none; stroke: {MUTED}; stroke-width: 4; }}
     .axle {{ fill: none; stroke: {INK}; stroke-width: 6; stroke-linecap: round; }}
     .fg-thin {{ fill: none; stroke: {MUTED}; stroke-width: 1.8; }}
     .fg-arrow {{ fill: none; stroke: {MUTED}; stroke-width: 2.4; }}
@@ -301,8 +350,9 @@ DESC = (
     "psi. The body moves along its own heading; in a turn the sensor also moves sideways by the "
     "turn rate times its longitudinal lever arm, and that part is read off the rate plot of the "
     "same sensor and removed. What remains is the body's forward velocity, which the sensor "
-    "resolves on its own rotated axes into a longitudinal and a lateral component. As the speed "
-    "changes the arrow stretches but its direction does not. Right: the sensor's own frame. "
+    "resolves on its own rotated axes into a longitudinal and a lateral component. The raw sensor "
+    "velocity changes direction from turn to turn; once the turn part is removed it always points "
+    "along the heading, at psi from the sensor's longitudinal axis, whatever the speed. Right: the sensor's own frame. "
     "Each sample drops a dot; raw readings scatter with the turn, and once the turn part is "
     "removed every dot falls on one line through the origin whose angle to the longitudinal axis "
     "is psi, so the slope is minus tan psi. Zero forward speed puts the dot on the origin and "
