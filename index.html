@@ -298,15 +298,15 @@
       <div class="module module-step">
         <p class="step-label">Principle 2</p>
         <h4>Yaw: forward motion seen through a rotated mount</h4>
-        <p>Remove the <i>&omega;&#8201;p<sub>x</sub></i> part and only forward motion is left. A mount rotated by <i>&psi;</i> sees a fixed share of it sideways, so lateral speed against forward speed is a line with slope &minus;tan&#8201;<i>&psi;</i>. The lever on yaw is forward speed, and the relation holds in every turn.</p>
+        <p>Three steps. (1) In a turn the sensor&rsquo;s velocity is the body&rsquo;s forward speed plus a sideways part <i>&omega;&#8201;p<sub>x</sub></i>, and <i>p<sub>x</sub></i> is already known. (2) Subtract it and only the forward speed <i>v</i> is left, along the heading. (3) The sensor&rsquo;s axes are rotated by <i>&psi;</i>, so it reads that <i>v</i> as <i>&#7805;<sub>x</sub></i> = <i>v</i>&#8201;cos&#8201;<i>&psi;</i> and <i>&#7805;<sub>y</sub></i> = &minus;<i>v</i>&#8201;sin&#8201;<i>&psi;</i>, so <i>&#7805;<sub>y</sub></i> = &minus;tan&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> at every speed.</p>
       </div>
       <figure class="hero hero-concept hero-stage1-yaw">
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_yaw_static.svg">
           <img src="assets/hero/hero_yaw.svg"
-               alt="Two panels. Left, a car seen from above with a sensor mounted rotated by the yaw angle psi. The black body velocity points along the heading and its length keeps changing with speed; the red arrows resolve that same velocity on the rotated sensor axes, so both components grow and shrink together while their ratio stays fixed. Right, the sensor's own frame: the red vector is plotted as (longitudinal, lateral) and its tip slides back and forth along one line through the origin, leaving a trail of samples; the angle of that line to the longitudinal axis is psi, so its slope is minus tan psi.">
+               alt="Three-step animation. Top view of a car with a sensor mounted ahead of the rear axle and rotated by the yaw angle psi. Step 1: in turns the measured sensor velocity (gray) is the forward body velocity (black) plus a sideways part equal to turn rate times lever arm (blue), and in the sensor frame on the right the measured samples scatter. Step 2: the sideways part is subtracted, only the forward velocity along the heading is left, and every sample slides onto one line through the origin. Step 3: the forward velocity is resolved on the rotated sensor axes as a longitudinal and a lateral component; the line in the sensor frame makes angle psi with the longitudinal axis, so lateral equals minus tan psi times longitudinal at any speed.">
         </picture>
-        <figcaption>Schematic, <i>&psi;</i> exaggerated. As the speed changes, both sensor-axis components change together, so the samples slide along one line whose angle is <i>&psi;</i>. A sample with no forward speed carries no yaw information.</figcaption>
+        <figcaption>Schematic, <i>&psi;</i> exaggerated. Step 1 measures, step 2 removes <i>&omega;&#8201;p<sub>x</sub></i>, step 3 reads the rest on the sensor axes. Hollow dots are raw readings; red dots are the same samples after the removal, all on one line of slope &minus;tan&#8201;<i>&psi;</i>.</figcaption>
       </figure>
       <div class="module module-step">
         <p class="step-label">Real data 1</p>
