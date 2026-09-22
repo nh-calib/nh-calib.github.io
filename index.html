@@ -313,7 +313,32 @@
         </figcaption>
       </figure>
       <p class="stage-bridge">
-        The same module on the real drive &mdash; the middle panel is the turn-rate slope (<i>p<sub>x</sub></i>),
+        What the solver actually does, on the real samples: rotate every reading into the vehicle axes by a
+        candidate <i>&psi;</i>, and ask whether its lateral part equals <i>&omega;&#8201;p<sub>x</sub></i>.
+        The two knobs move different things, so only one pair satisfies every turn:
+      </p>
+      <figure class="hero hero-real hero-stage1-knobs">
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
+               poster="assets/hero/hero_m3_knobs.png"
+               aria-label="Three panels on the 697 real A2D2 FRONT_CENTER turn samples. Left, one fast reading split into its vehicle-frame lateral part (cos psi times lateral reading plus sin psi times forward reading plus slip) next to the lever-arm prediction p_x times omega, with the gap between them. Middle, all samples as yaw rate against vehicle-frame lateral speed, coloured by forward speed, with the line p_x times omega. First only p_x is swept: the line pivots through the origin while the cloud stays put. Then only psi is swept: the line stays put while the cloud shifts, the fastest samples furthest. Finally both start wrong and a robust Gauss-Newton solve walks them together until every sample lies on the line. Right, the Huber cost of the residual over psi and p_x, with the knob path traced on it and a single minimum at psi 1.23 degrees and p_x 1.668 metres.">
+          <source src="assets/hero/hero_m3_knobs.webm" type="video/webm">
+          <source src="assets/hero/hero_m3_knobs.mp4" type="video/mp4">
+        </video>
+        <img class="hero-still" src="assets/hero/hero_m3_knobs.png"
+             alt="Both knobs at the minimum: every one of the 697 real turn samples lies on the line p_x times omega, residual RMS 0.026 metres per second, at psi 1.23 degrees and p_x 1.669 metres.">
+        <figcaption>
+          A2D2 <b>FRONT_CENTER</b>, the 697 real gated samples, fixed-dt. The vehicle-frame lateral speed of a reading is
+          <i>v</i><sub>lat</sub>(<i>&psi;</i>) = sin&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> +
+          cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i>, and the NHC demands
+          <i>v</i><sub>lat</sub> + slip = <i>p<sub>x</sub>&#8201;&omega;</i>.
+          Turning <i>p<sub>x</sub></i> only pivots the line; turning <i>&psi;</i> only moves the points, each by about
+          &delta;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i>, so the fast samples leave first. Because the two knobs
+          move the picture in different directions, the cost (right) has one minimum &mdash; the core M3 solution,
+          1.230&deg; and 1.668&#8239;m, residual RMS 0.026&#8239;m/s.
+        </figcaption>
+      </figure>
+      <p class="stage-bridge">
+        The same module replayed along the drive &mdash; the middle panel is the turn-rate slope (<i>p<sub>x</sub></i>),
         the right panel the longitudinal-speed slope (<i>&psi;</i>), both growing as the drive is replayed:
       </p>
       <figure class="hero hero-real hero-stage1-real">

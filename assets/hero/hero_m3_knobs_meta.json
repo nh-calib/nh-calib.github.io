@@ -1,0 +1,32 @@
+{
+ "channel": "FRONT_CENTER",
+ "dt_mode": "fixed",
+ "n_samples": 697,
+ "fps": 30,
+ "n_frames": 468,
+ "psi_core_deg": 1.2304166996054853,
+ "px_core_m": 1.668404524592409,
+ "landscape_min_psi_deg": 1.25,
+ "landscape_min_px_m": 1.6600000000000001,
+ "gn_start": [
+  -3.0000000000000004,
+  0.7
+ ],
+ "gn_end": [
+  1.2300533862608982,
+  1.6685776749107362
+ ],
+ "gn_iters": 12,
+ "residual_rms_at_min_mps": 0.025746277070597172,
+ "rep_sample_index": 671,
+ "rep_vx_mps": 8.673701993880119,
+ "rep_om_degps": 15.156139294926897,
+ "px_knob_range_m": [
+  0.6,
+  2.8
+ ],
+ "psi_knob_range_deg": [
+  -3.5,
+  5.5
+ ]
+}
