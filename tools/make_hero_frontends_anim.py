@@ -113,11 +113,11 @@ def _grown(ax, t, v, T, color, lw, ls="-", marker=None):
 def render(i):
     T = float(FT[i])
     fig = plt.figure(figsize=(S.FIG_W, S.FIG_H), dpi=120)
-    outer = fig.add_gridspec(1, 2, wspace=0.200, left=0.050, right=0.958,
-                             top=0.822, bottom=0.058)
+    outer = fig.add_gridspec(1, 2, wspace=0.265, left=0.064, right=0.950,
+                             top=0.804, bottom=0.068)
 
     def band(col):
-        g = outer[col].subgridspec(2, 2, hspace=0.60, wspace=0.36,
+        g = outer[col].subgridspec(2, 2, hspace=0.60, wspace=0.42,
                                    height_ratios=[1.0, 0.96])
         a0 = fig.add_subplot(g[0, 0])
         a1 = fig.add_subplot(g[0, 1])
@@ -151,6 +151,12 @@ def render(i):
                 fontsize=6.2, color="#8f9aa8", ha="center", va="center", zorder=1,
                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.75))
     A0.plot([0], [0], marker="s", ms=5.0, color=S.C_LIDAR, zorder=5)
+    lv = (float(np.interp(T, D["lt"], D["lvf"])), float(np.interp(T, D["lt"], D["lvl"])))
+    S.ego_arrow(A0, lv)
+    A0.legend(handles=[S.ego_legend_handle()], loc="upper right", fontsize=7.0,
+              frameon=False, handlelength=1.3, borderpad=0.1)
+    S.ego_value_box(A0, lv, "GNSS", float(np.interp(T, D["gt"], D["gv"])), S.C_LIDAR,
+                    "scan-matched ego-velocity")
     A0.set_xlim(-4, 64)
     A0.set_ylim(-34, 34)
     A0.set_aspect("equal")
@@ -225,24 +231,17 @@ def render(i):
     rng = Q["radar_rng"][a:b].astype(float)
     inl = Q["radar_inl"][a:b].astype(bool)
     fit = Q["radar_fit"][k]
-    picked = S.radar_doppler_bev(B0, az, vr, rng)
+    picked = S.radar_doppler_bev(B0, az, vr, rng, fit=fit)
     B0.legend(handles=[Line2D([], [], marker="o", ls="none", color="#94a3b8",
                               alpha=0.5, label="all detections"),
                        Line2D([], [], marker="o", ls="none",
                               color=S.DOPPLER_CMAP(S.DOPPLER_NORM(-6)),
-                              label="selected + Doppler vector")],
+                              label="selected + Doppler vector"),
+                       S.ego_legend_handle()],
               loc="upper right", fontsize=7.0, frameon=False, handlelength=1.3,
               borderpad=0.1, labelspacing=0.22)
     can_v = float(np.interp(float(Q["radar_t"][k]), D["ct"], D["cvx"]))
-    B0.text(0.028, 0.045,
-            "fitted ego-velocity\n"
-            "$v$ = (%.2f, %.2f) m/s\n"
-            "$|v|$ %.2f  ·  CAN %.2f m/s"
-            % (fit[0], fit[1], float(np.hypot(fit[0], fit[1])), can_v),
-            transform=B0.transAxes, ha="left", va="bottom", fontsize=7.2,
-            color=S.FG, linespacing=1.45, zorder=6,
-            bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=S.C_RADAR,
-                      lw=0.8, alpha=0.94))
+    S.ego_value_box(B0, fit, "CAN", can_v, S.C_RADAR, "fitted ego-velocity")
     S.head(B0, "SENSOR A  ·  radar", "shown: live BEV, %d returns  ·  %d vectors"
            % (len(az), len(picked)), S.C_RADAR, ("paper", S.BADGE_PAPER),
            device="77 GHz series radar, sensor 1  ·  %.1f scans/s"
@@ -308,14 +307,13 @@ def render(i):
            S.FG)
 
     fig.canvas.draw()
-    S.band_box(fig, [A0, A1, A2, AS0, AS1], S.BANDS["a2d2"])
-    S.band_box(fig, [B0, B1, B2, BS0, BS1], S.BANDS["rs"])
-    S.assemble(fig, [A0], [A1], [A2, AS0, AS1], (S.C_LIDAR, S.C_GNSS),
-               S.BANDS["a2d2"]["accent"],
-               "both devices deliver (v, ω) on their own clock")
-    S.assemble(fig, [B0], [B1, B1b], [B2, BS0, BS1], (S.C_RADAR, S.C_CAN),
-               S.BANDS["rs"]["accent"],
-               "both devices deliver (v, ω) on their own clock")
+    note = "both devices deliver (v, ω) on their own clock"
+    fa, fb = S.assemble(fig, [([A0], [A1], [A2, AS0, AS1], (S.C_LIDAR, S.C_GNSS),
+                               S.BANDS["a2d2"]["accent"], note),
+                              ([B0], [B1, B1b], [B2, BS0, BS1], (S.C_RADAR, S.C_CAN),
+                               S.BANDS["rs"]["accent"], note)])
+    S.band_box(fig, [A0, A1, A2, AS0, AS1], S.BANDS["a2d2"], fa)
+    S.band_box(fig, [B0, B1, B2, BS0, BS1], S.BANDS["rs"], fb)
 
     out = OUTDIR / ("%05d.png" % i)
     fig.savefig(out, dpi=120, facecolor="white")

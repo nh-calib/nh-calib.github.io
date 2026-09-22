@@ -159,8 +159,52 @@ def select_doppler_points(az, vr, rng, n=14):
     return np.asarray(chosen, dtype=int)
 
 
-def radar_doppler_bev(ax, az, vr, rng, n_highlight=14):
-    """All detections in grey; a sparse subset carries colour and LOS Doppler arrows."""
+#: ego-velocity arrow is drawn at EGO_SCALE (3x the Doppler arrow scale) so a
+#: ~9 m/s vector clears the cluster of returns around the sensor origin.
+DOPPLER_ARROW_SCALE, EGO_SCALE, C_EGO = 0.90, 2.70, "#111827"
+
+
+def ego_arrow(ax, v):
+    """Estimated linear velocity of the sensor, drawn from the sensor origin.
+
+    `v` = (vx, vy) in the plot's own sensor frame [m/s]; drawn at EGO_SCALE so a
+    ~9 m/s vector reaches past the returns clustered around the sensor.
+    """
+    if v is None or not np.all(np.isfinite(v)):
+        return
+    ex, ey = EGO_SCALE * float(v[0]), EGO_SCALE * float(v[1])
+    ax.annotate("", xy=(ex, ey), xytext=(0.0, 0.0),
+                arrowprops=dict(arrowstyle="-|>", color=C_EGO, lw=2.4,
+                                mutation_scale=13, shrinkA=0, shrinkB=0),
+                zorder=7)
+    ax.text(ex + 1.6, ey, r"$\hat v_{\mathrm{sensor}}$", ha="left",
+            va="center", fontsize=8.6, color=C_EGO, fontweight="bold",
+            zorder=7, bbox=dict(boxstyle="round,pad=0.12", fc="white",
+                                ec="none", alpha=0.85))
+
+
+def ego_legend_handle():
+    return Line2D([], [], color=C_EGO, lw=2.2, marker=">", ms=5,
+                  label="est. sensor velocity (3x scale)")
+
+
+def ego_value_box(ax, v, ref_label, ref_v, edge, head_line):
+    ax.text(0.028, 0.045,
+            "%s\n$v$ = (%.2f, %.2f) m/s\n$|v|$ %.2f  ·  %s %.2f m/s"
+            % (head_line, v[0], v[1], float(np.hypot(v[0], v[1])), ref_label, ref_v),
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=7.2,
+            color=FG, linespacing=1.45, zorder=6,
+            bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=edge,
+                      lw=0.8, alpha=0.94))
+
+
+def radar_doppler_bev(ax, az, vr, rng, n_highlight=14, fit=None):
+    """All detections in grey; a sparse subset carries colour and LOS Doppler arrows.
+
+    `fit` = (vx, vy) of the one-scan least-squares ego-velocity, in the same
+    sensor frame as the plot (vr = -(vx cos az + vy sin az)); it is drawn as
+    the sensor's own linear-velocity vector from the sensor origin.
+    """
     x, y = rng * np.cos(az), rng * np.sin(az)
     good = np.isfinite(x) & np.isfinite(y) & np.isfinite(vr)
     ax.scatter(x[good], y[good], s=5.0, color="#94a3b8", alpha=0.25,
@@ -170,12 +214,13 @@ def radar_doppler_bev(ax, az, vr, rng, n_highlight=14):
         colors = DOPPLER_CMAP(DOPPLER_NORM(vr[pick]))
         ax.scatter(x[pick], y[pick], s=24, c=colors, edgecolors="white",
                    linewidths=0.55, zorder=4)
-        arrow_scale = 0.90
+        arrow_scale = DOPPLER_ARROW_SCALE
         ax.quiver(x[pick], y[pick], arrow_scale * vr[pick] * np.cos(az[pick]),
                   arrow_scale * vr[pick] * np.sin(az[pick]), color=colors,
                   angles="xy", scale_units="xy", scale=1.0, width=0.006,
                   headwidth=3.8, headlength=4.5, headaxislength=4.0, zorder=3)
     ax.plot([0], [0], marker="s", ms=5.0, color=C_RADAR, zorder=5)
+    ego_arrow(ax, fit)
     ax.set_xlim(-4, 82)
     ax.set_ylim(-52, 52)
     ax.set_aspect("equal")
@@ -200,6 +245,9 @@ OD_TOP = 0.067 * _HS + 0.030
 #: weak keys: the animation builds hundreds of figures in one process, and
 #: id()-keyed entries would go stale and be silently reused.
 _HEAD = weakref.WeakKeyDictionary()
+#: device headers: (rows, colour bar, badge, axes top) -- re-pinned to the
+#: card's top-left corner once `assemble` knows where the card is.
+_PIN = weakref.WeakKeyDictionary()
 
 
 def head(ax, text, sub, color, badge=None, device=None, measures=None):
@@ -213,8 +261,9 @@ def head(ax, text, sub, color, badge=None, device=None, measures=None):
     fig = ax.figure
     bb = ax.get_position()
     x = bb.x0 + (0.0115 if device else 0.0)
+    bar = badge_t = None
     if device:                                   # device colour bar, band-style
-        fig.add_artist(Rectangle(
+        bar = fig.add_artist(Rectangle(
             (bb.x0, bb.y1 + ROW_TITLE - 0.0035), 0.0045, 0.0185,
             transform=fig.transFigure, facecolor=color, edgecolor="none",
             zorder=6))
@@ -234,10 +283,12 @@ def head(ax, text, sub, color, badge=None, device=None, measures=None):
     _HEAD[ax] = rows
     if badge:
         label, bc = badge
-        fig.text(bb.x1, bb.y1 + ROW_TITLE + 0.001, label,
+        badge_t = fig.text(bb.x1, bb.y1 + ROW_TITLE + 0.001, label,
                  ha="right", va="bottom",
                  fontsize=6.9, color="white", fontweight="bold",
                  bbox=dict(boxstyle="round,pad=0.30", fc=bc, ec="none"))
+    if device:
+        _PIN[ax] = (rows, bar, badge_t, bb.y1)
 
 
 def _wash(color, k=0.93):
@@ -245,34 +296,81 @@ def _wash(color, k=0.93):
     return tuple(k + (1 - k) * c for c in to_rgb(color))
 
 
-def sensor_box(fig, axes, color):
-    """Independent frame around ONE physical device.
-
-    The band box says "this is one drive".  This says "this is one box bolted
-    to that car": it wraps the panel together with its four header rows, in the
-    device's own colour, so the two left columns cannot be read as one stream
-    plotted twice.  Pass every axes that belongs to the device (a twin y-axis
-    carries its own tick labels and must be included or the frame clips them).
-    """
+def sensor_extent(fig, axes):
+    """Tight figure-fraction extent (x0, x1, y0, y1) of one device card's content."""
     r = fig.canvas.get_renderer()
     inv = fig.transFigure.inverted()
     bbs = [a.get_tightbbox(r).transformed(inv) for a in axes]
     bbs += [t.get_window_extent(r).transformed(inv)
             for a in axes for t in _HEAD.get(a, [])]
-    x0 = min(b.x0 for b in bbs)
-    x1 = max(b.x1 for b in bbs)
-    y0 = min(b.y0 for b in bbs)
-    y1 = max(a.get_position().y1 for a in axes) + HEAD_TOP
-    px, pyb = 0.0050, 0.009
+    return (min(b.x0 for b in bbs), max(b.x1 for b in bbs),
+            min(b.y0 for b in bbs), max(a.get_position().y1 for a in axes) + HEAD_TOP)
+
+
+#: side padding of a device card and the minimum gutter between two cards
+#: of one column (figure fraction; 0.014 ~ 28 px at 1968 px width)
+CARD_PX, CARD_GAP = 0.0050, 0.014
+
+
+def sensor_box(fig, ext, color):
+    """Independent frame around ONE physical device.
+
+    The band box says "this is one drive".  This says "this is one box bolted
+    to that car": it wraps the panel together with its four header rows, in the
+    device's own colour, so the two left columns cannot be read as one stream
+    plotted twice.  `ext` comes from `sensor_extent`, already unified by
+    `assemble` so every device card in the figure has the same size.
+    """
+    x0, x1, y0, y1 = ext
+    px, pyb = CARD_PX, 0.009
     fig.add_artist(FancyBboxPatch(
         (x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyb,
         boxstyle="round,pad=0.003,rounding_size=0.009",
         transform=fig.transFigure, facecolor=_wash(color),
         edgecolor=color, linewidth=1.0, alpha=0.95, zorder=-4.5))
-    return x0 - px, x1 + px, y0 - pyb
+    return x0 - px, x1 + px, y0 - pyb, y1
 
 
-def odometry_box(fig, axes, accent, note):
+#: inset of a device name from its card's top-left corner (figure fraction)
+PIN_DX, PIN_DY = 0.0070, 0.0085
+
+
+def odometry_extent(fig, axes):
+    """content extent of the ODOMETRY panels, without drawing anything."""
+    r = fig.canvas.get_renderer()
+    inv = fig.transFigure.inverted()
+    bbs = [a.get_tightbbox(r).transformed(inv) for a in axes]
+    bbs += [t.get_window_extent(r).transformed(inv)
+            for a in axes for t in _HEAD.get(a, [])]
+    return None, None, (min(b.x0 for b in bbs), max(b.x1 for b in bbs))
+
+
+def pin_header(axes, box):
+    """Move a device header so the name sits at the card's top-left corner.
+
+    Row spacing is kept; only the block is translated.  Every device card in
+    the figure therefore labels itself at the same place, independent of how
+    tall or narrow its plot is (the LiDAR panel is equal-aspect and shorter).
+    """
+    ax = next((a for a in axes if a in _PIN), None)
+    if ax is None:
+        return
+    rows, bar, badge_t, ytop = _PIN[ax]
+    bx0, bx1, _, by1 = box
+    # the title row's top should land PIN_DY below the card top
+    shift_y = (by1 - PIN_DY) - (ytop + ROW_TITLE + 0.0150)
+    xt = bx0 + PIN_DX + 0.0115
+    for t in rows:
+        x, y = t.get_position()
+        t.set_position((xt, y + shift_y))
+    if bar is not None:
+        bar.set_xy((bx0 + PIN_DX, bar.get_y() + shift_y))
+    if badge_t is not None:
+        x, y = badge_t.get_position()
+        badge_t.set_position((bx1 - PIN_DX, y + shift_y))
+
+
+def odometry_box(fig, axes, accent, note, xlim=None):
     """Dashed card around the lower two panels of a column.
 
     The two device cards above say "different box, different quantity".  This
@@ -291,6 +389,8 @@ def odometry_box(fig, axes, accent, note):
     y0 = min(b.y0 for b in bbs)
     y1 = max(a.get_position().y1 for a in axes) + OD_TOP
     px, pyb = 0.0058, 0.011
+    if xlim is not None:                  # shared column width from assemble
+        x0, x1 = xlim[0] + px, xlim[1] - px
     fig.add_artist(FancyBboxPatch(
         (x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyb,
         boxstyle="round,pad=0.003,rounding_size=0.010",
@@ -306,7 +406,7 @@ def odometry_box(fig, axes, accent, note):
              fontsize=10.2, fontweight="bold", color=accent, zorder=-3.6)
     fig.text(x1 + px - 0.004, ylab + 0.0015, note, ha="right", va="bottom",
              fontsize=7.4, color=MUT, zorder=-3.6)
-    return 0.5 * (x0 + x1), y1
+    return 0.5 * (x0 + x1), y1, (x0 - px, x1 + px, y0 - pyb, y1)
 
 
 def feed_arrow(fig, src, dst, color):
@@ -317,37 +417,83 @@ def feed_arrow(fig, src, dst, color):
         shrinkA=0, shrinkB=0, zorder=6))
 
 
-def assemble(fig, devA, devB, odo, colors, accent, note):
-    """Draw one column's grammar: two device cards, one ODOMETRY card, two feeds.
+def assemble(fig, cols):
+    """Draw every column's grammar: two device cards, one ODOMETRY card, two feeds.
 
-    devA/devB/odo are lists of axes (a twin y-axis carries its own tick labels
-    and must be listed, or the frame clips them).
+    cols = [(devA, devB, odo, colors, accent, note), ...]; devA/devB/odo are
+    lists of axes (a twin y-axis carries its own tick labels and must be
+    listed, or the frame clips them).  All device cards in the figure share
+    one height (common top and bottom) and one width (centred on their own
+    content), so no device reads as more important than another.  Feeds drop
+    straight down from each card's centre.
     """
-    cA, cB = colors
-    bA = sensor_box(fig, devA, cA)
-    bB = sensor_box(fig, devB, cB)
-    ox, oy = odometry_box(fig, odo, accent, note)
-    for box, color, dx in ((bA, cA, -0.013), (bB, cB, +0.013)):
-        feed_arrow(fig, (0.5 * (box[0] + box[1]), box[2] - 0.004),
-                   (ox + dx, oy + 0.004), color)
+    exts = [[sensor_extent(fig, c[0]), sensor_extent(fig, c[1])] for c in cols]
+    flat = [e for pair in exts for e in pair]
+    y0 = min(e[2] for e in flat)
+    # + headroom: pinned headers sit at the card top, clear of the tallest plot
+    # (and of the CAN panel's twin-axis label drawn above its axes)
+    y1 = max(e[3] for e in flat) + 0.018
+    w = max(e[1] - e[0] for e in flat)
+    # a common width must not make the two cards of one column collide:
+    # centre distance minus both cards' side padding minus a visible gutter
+    for (a, b) in exts:
+        room = (0.5 * (b[0] + b[1]) - 0.5 * (a[0] + a[1])) - 2 * CARD_PX - CARD_GAP
+        w = min(w, room)
+    frames = []
+    for (devA, devB, odo, colors, accent, note), pair in zip(cols, exts):
+        # one outer width per column, shared by the ODOMETRY card and the two
+        # device cards: the wider of the odometry content and the two cards'
+        # content (twin-axis tick labels can reach past the odometry panels)
+        _, _, oext = odometry_extent(fig, odo)
+        cx0 = min(oext[0] - 0.0058, pair[0][0] - 2 * CARD_PX)
+        cx1 = max(oext[1] + 0.0058, pair[1][1] + 2 * CARD_PX)
+        ox, oy, ofr = odometry_box(fig, odo, accent, note, xlim=(cx0, cx1))
+        fr = [ofr]
+        # the two device cards tile the ODOMETRY card's width exactly: same
+        # outer left/right margin inside the dataset box, same card width,
+        # CARD_GAP between them.  sensor_box adds CARD_PX on each side.
+        # split point: centre of the gutter between the two cards' content
+        # (the GNSS / CAN panels carry a y-label that reaches left of the
+        # column centre), so both cards keep their content inside.
+        xm = 0.5 * (pair[0][1] + pair[1][0])
+        spans = [(ofr[0] + CARD_PX, xm - 0.5 * CARD_GAP - CARD_PX),
+                 (xm + 0.5 * CARD_GAP + CARD_PX, ofr[1] - CARD_PX)]
+        for (lo, hi), e, color, dev in zip(spans, pair, colors, (devA, devB)):
+            if e[0] < lo - 1e-4 or e[1] > hi + 1e-4:
+                raise SystemExit("card content %.4f..%.4f exceeds slot %.4f..%.4f"
+                                 % (e[0], e[1], lo, hi))
+            box = sensor_box(fig, (lo, hi, y0, y1), color)
+            pin_header(dev, box)
+            fr.append(box)
+            cx = 0.5 * (box[0] + box[1])
+            feed_arrow(fig, (cx, box[2] - 0.004), (cx, oy + 0.004), color)
+        gap = fr[2][0] - fr[1][1]
+        print("CARD_GAP %s %.4f (min %.4f)" % (note[:12], gap, CARD_GAP))
+        if gap < CARD_GAP - 1e-6:
+            raise SystemExit("device cards collide: gap %.4f < %.4f" % (gap, CARD_GAP))
+        # outer extent (x0, x1, y0, y1) of every inner frame of this column, so
+        # the dataset box can be sized around the frames instead of the axes
+        frames.append((min(f[0] for f in fr), max(f[1] for f in fr),
+                       min(f[2] for f in fr), max(f[3] for f in fr)))
+    return frames
 
 
-def band_box(fig, axes, cfg):
-    """tinted rounded frame + header bar around every axes of one dataset."""
-    r = fig.canvas.get_renderer()
-    inv = fig.transFigure.inverted()
-    tbs = [a.get_tightbbox(r).transformed(inv) for a in axes]
-    x0 = min(b.x0 for b in tbs)
-    x1 = max(b.x1 for b in tbs)
-    y0 = min(b.y0 for b in tbs)
-    y1 = max(a.get_position().y1 for a in axes)
-    px, pyt, pyb = 0.013, 0.090, 0.019
+def band_box(fig, axes, cfg, frames):
+    """tinted rounded frame + header bar around one dataset column.
+
+    Sized from `frames` -- the outer extent of the device and ODOMETRY cards
+    returned by `assemble` -- not from the axes, so no inner card can cross the
+    dataset border, and the title row sits in its own strip above the cards.
+    """
+    x0, x1, y0, y1 = frames
+    px, pyb = 0.0075, 0.0085
+    pyt = 0.040                                   # title strip above the cards
     box = FancyBboxPatch((x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyt + pyb,
                          boxstyle="round,pad=0.004,rounding_size=0.012",
                          transform=fig.transFigure, facecolor=cfg["tint"],
                          edgecolor=cfg["accent"], linewidth=1.2, zorder=-5)
     fig.add_artist(box)
-    yh = y1 + pyt - 0.020
+    yh = y1 + 0.5 * pyt - 0.001
     fig.add_artist(FancyBboxPatch(
         (x0 - px + 0.005, yh - 0.011), 0.0060, 0.023,
         boxstyle="square,pad=0", transform=fig.transFigure,
@@ -418,12 +564,12 @@ def main():
     # right edge stops well short of 1.0: the column frame is fitted to the
     # tight bbox, so the rightmost twin-axis tick labels push it further right
     # than the axes themselves and would otherwise be clipped.
-    outer = fig.add_gridspec(1, 2, wspace=0.200, left=0.050, right=0.958,
-                             top=0.822, bottom=0.058)
+    outer = fig.add_gridspec(1, 2, wspace=0.265, left=0.064, right=0.950,
+                             top=0.804, bottom=0.068)
 
     def make_band(col):
         """one dataset = one 2x2 column: two devices on top, odometry below."""
-        g = outer[col].subgridspec(2, 2, hspace=0.60, wspace=0.36,
+        g = outer[col].subgridspec(2, 2, hspace=0.60, wspace=0.42,
                                    height_ratios=[1.0, 0.96])
         a0 = fig.add_subplot(g[0, 0])
         a1 = fig.add_subplot(g[0, 1])
@@ -455,6 +601,17 @@ def main():
                 fontsize=6.2, color="#8f9aa8", ha="center", va="center", zorder=1,
                 bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.75))
     A0.plot([0], [0], marker="s", ms=5.0, color=C_LIDAR, zorder=5)
+    # sensor linear velocity at the scan instant: LiDAR twist (vx fwd, vy left),
+    # the same sensor frame as the cloud, so it is drawn at the sensor origin.
+    lv_scan = (float(np.interp(float(meta["a2d2_scan_rel_t"]), lt, lvf)),
+               float(np.interp(float(meta["a2d2_scan_rel_t"]), lt, lvl)))
+    res["a2d2_scan_vx"], res["a2d2_scan_vy"] = lv_scan
+    res["a2d2_scan_gnss_v"] = float(np.interp(float(meta["a2d2_scan_rel_t"]), gt, gv))
+    ego_arrow(A0, lv_scan)
+    A0.legend(handles=[ego_legend_handle()], loc="upper right", fontsize=7.0,
+              frameon=False, handlelength=1.3, borderpad=0.1)
+    ego_value_box(A0, lv_scan, "GNSS", res["a2d2_scan_gnss_v"], C_LIDAR,
+                  "scan-matched ego-velocity")
     A0.set_xlim(-4, 64)
     A0.set_ylim(-34, 34)
     A0.set_aspect("equal")
@@ -520,24 +677,17 @@ def main():
     az, vr, rng, inl = (z["rs_scan_az"], z["rs_scan_vr"], z["rs_scan_rng"],
                          z["rs_scan_inl"])
     fit = z["rs_scan_fit"]
-    picked = radar_doppler_bev(B0, az, vr, rng)
+    picked = radar_doppler_bev(B0, az, vr, rng, fit=fit)
     B0.legend(handles=[
         Line2D([], [], marker="o", ls="none", color="#94a3b8", alpha=0.5,
                label="all detections"),
         Line2D([], [], marker="o", ls="none", color=DOPPLER_CMAP(DOPPLER_NORM(-6)),
-               label="selected + Doppler vector")],
+               label="selected + Doppler vector"),
+        ego_legend_handle()],
         loc="upper right", fontsize=7.0, frameon=False, handlelength=1.3,
         borderpad=0.1, labelspacing=0.22)
-    B0.text(0.028, 0.045,
-            "fitted ego-velocity\n"
-            "$v$ = (%.2f, %.2f) m/s\n"
-            "$|v|$ %.2f  ·  CAN %.2f m/s"
-            % (res["rs_scan_vx"], res["rs_scan_vy"], res["rs_scan_vmag"],
-               res["rs_scan_can_v"]),
-            transform=B0.transAxes, ha="left", va="bottom", fontsize=7.2,
-            color=FG, linespacing=1.45, zorder=6,
-            bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=C_RADAR,
-                      lw=0.8, alpha=0.94))
+    ego_value_box(B0, (res["rs_scan_vx"], res["rs_scan_vy"]), "CAN",
+                  res["rs_scan_can_v"], C_RADAR, "fitted ego-velocity")
     head(B0, "SENSOR A  ·  radar",
          "shown: one scan, %d returns  ·  %d vectors"
          % (meta["rs_scan_n"], len(picked)),
@@ -599,14 +749,13 @@ def main():
          % res["rs_v_mismatch"], FG)
 
     fig.canvas.draw()
-    band_box(fig, [A0, A1, A2, AS0, AS1], BANDS["a2d2"])
-    band_box(fig, [B0, B1, B2, BS0, BS1], BANDS["rs"])
-    assemble(fig, [A0], [A1], [A2, AS0, AS1], (C_LIDAR, C_GNSS),
-             BANDS["a2d2"]["accent"],
-             "both devices deliver (v, ω) on their own clock")
-    assemble(fig, [B0], [B1, B1b], [B2, BS0, BS1], (C_RADAR, C_CAN),
-             BANDS["rs"]["accent"],
-             "both devices deliver (v, ω) on their own clock")
+    note = "both devices deliver (v, ω) on their own clock"
+    fa, fb = assemble(fig, [([A0], [A1], [A2, AS0, AS1], (C_LIDAR, C_GNSS),
+                             BANDS["a2d2"]["accent"], note),
+                            ([B0], [B1, B1b], [B2, BS0, BS1], (C_RADAR, C_CAN),
+                             BANDS["rs"]["accent"], note)])
+    band_box(fig, [A0, A1, A2, AS0, AS1], BANDS["a2d2"], fa)
+    band_box(fig, [B0, B1, B2, BS0, BS1], BANDS["rs"], fb)
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     png = OUTDIR / "frontends_real.png"

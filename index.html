@@ -200,7 +200,7 @@
       </div>
       <figure class="module-figure" id="fig-frontends">
         <img src="assets/frontends_real.png"
-             alt="Two tinted columns side by side, one per drive: A2D2 on the left, RadarScenes on the right. The top row of each column holds two labelled devices in their own outlined, colour-coded cards: for A2D2, a Velodyne VLP-16 whose scan is coloured grey to green to yellow by height, and a one-hertz GNSS receiver shown as a scatter of fixes; for RadarScenes, a 77 gigahertz radar drawn as a grey bird’s-eye scatter with a few coloured Doppler vectors, and the wheel encoders and yaw-rate gyro on the bus. Below them a single dashed card labelled ODOMETRY holds the dead-reckoned trajectory and the twist strip, and an arrow runs down into it from each of the two device cards above.">
+             alt="Two tinted columns side by side, one per drive: A2D2 on the left, RadarScenes on the right. The top row of each column holds two labelled devices in their own outlined, colour-coded cards: for A2D2, a Velodyne VLP-16 whose scan is coloured grey to green to yellow by height and carries a black arrow from the sensor showing its scan-matched linear velocity, and a one-hertz GNSS receiver shown as a scatter of fixes; for RadarScenes, a 77 gigahertz radar drawn as a grey bird’s-eye scatter with a few coloured Doppler vectors and a black arrow from the sensor showing its own estimated linear velocity, and the wheel encoders and yaw-rate gyro on the bus. Below them a single dashed card labelled ODOMETRY holds the dead-reckoned trajectory and the twist strip, and an arrow runs down into it from each of the two device cards above.">
         <figcaption>
           Four front ends, two drives, one interface. Each tinted column is a single drive; in its top row,
           <b>sensor A and sensor B are two different boxes bolted to that car</b>, so each of them gets its own
@@ -210,7 +210,8 @@
           Earth. <i>RadarScenes sequence&#8239;1</i>: a 77&#8239;GHz radar that measures range, azimuth and
           radial Doppler per return, against wheel encoders and a yaw-rate gyro on the bus. Four devices, four
           unrelated measurements, four different algorithms &mdash; scan matching, differencing fixes, a
-          one-scan least squares, vehicle kinematics. The two arrows mark where that stops mattering: both
+          one-scan least squares, vehicle kinematics. In the radar card the black arrow from the sensor is its own
+          linear velocity as solved from that single scan (drawn at 3&times; the Doppler-arrow scale). The two arrows mark where that stops mattering: both
           devices feed the single dashed <b>ODOMETRY</b> card below, drawn identically in both columns on
           purpose, because whatever went in, what comes out is a planar trajectory dead-reckoned from
           <i>(v,&#8239;&omega;)</i>. The A2D2 window is ordinary driving &mdash; 74&#8239;% of
@@ -226,7 +227,7 @@
       <figure class="hero hero-real hero-frontends">
         <video class="hero-media" autoplay muted loop playsinline preload="none"
                poster="assets/hero/hero_frontends_real.png"
-               aria-label="The same two columns animated over the twenty second window. A2D2 LiDAR points change from grey to green to yellow with height. RadarScenes detections remain faint grey except for a sparse coloured subset carrying radial-Doppler arrows; the fitted ego-velocity is updated every scan. Inside the ODOMETRY card of each column the trajectory trail grows and the twist cursor advances.">
+               aria-label="The same two columns animated over the twenty second window. A2D2 LiDAR points change from grey to green to yellow with height. RadarScenes detections remain faint grey except for a sparse coloured subset carrying radial-Doppler arrows; in both the LiDAR and the radar card the sensor’s estimated linear-velocity arrow and its readout are updated every frame. Inside the ODOMETRY card of each column the trajectory trail grows and the twist cursor advances.">
           <source src="assets/hero/hero_frontends_real.webm" type="video/webm">
           <source src="assets/hero/hero_frontends_real.mp4" type="video/mp4">
         </video>
