@@ -80,16 +80,22 @@ def kt(times):
     return ";".join(f"{min(max(t / LOOP, 0.0), 1.0):.4f}" for t in times)
 
 
+def speed(t: float) -> float:
+    """Chassis forward speed (fraction of max): keeps changing, never repeats a
+    ramp.  Integer harmonics of the loop so the 9 s loop closes seamlessly."""
+    w = 2 * math.pi * t / LOOP
+    return 0.60 + 0.22 * math.sin(2 * w) + 0.11 * math.sin(5 * w + 1.1) + 0.05 * math.sin(11 * w + 0.4)
+
+
+KNOT = 0.05                                    # sampling of the speed curve
+TRAIL = 0.30                                   # a sample dot is dropped every TRAIL s
+T_STATIC = 6.2                                 # instant shown by the static file
+
+
 def speed_profile():
-    """(time, speed) knots of the piecewise-linear speed ramp, looping to zero."""
-    pts = [(0.0, 0.0)]
-    prev = 0.0
-    for k, (v, _) in enumerate(STEPS):
-        t = T0 + k * DT
-        pts += [(t, prev), (t + 0.5, v)]
-        prev = v
-    pts += [(LOOP - 0.5, prev), (LOOP, 0.0)]
-    return pts
+    """(time, speed) knots of the wobbling speed curve over one loop."""
+    n = int(round(LOOP / KNOT))
+    return [(k * KNOT, speed(k * KNOT)) for k in range(n + 1)]
 
 
 def anim_attr(attr, fn, pts):
@@ -167,8 +173,8 @@ def panel_a(animated: bool) -> str:
     sx, sy = SEN
     out = frame(PA_X, "Sensor mounted at yaw &#968;",
                 "the body moves along its heading; the sensor sees it rotated",
-                ["grey: raw sensor velocity &#8212; its direction swings every turn",
-                 "remove blue &#969;&#8201;p&#8202;x: it always points at &#968; from x&#771;"])
+                ["black v: body velocity &#8212; its size keeps changing",
+                 "red: the same v on the sensor axes &#8212; fixed ratio"])
     out += car_top()
     # heading reference line through the sensor
     out += (f'<line x1="{fmt(sx)}" y1="{fmt(sy)}" x2="{fmt(sx + VL + 60)}" y2="{fmt(sy)}" '
@@ -188,7 +194,7 @@ def panel_a(animated: bool) -> str:
             + text(sx + r + 4, sy - 6, "&#968;", "sym"))
 
     pts = speed_profile()
-    last_v = STEPS[-1][0]
+    last_v = speed(T_STATIC)
     # vehicle velocity along the heading (length = speed)
     if animated:
         out += (f'<line x1="{fmt(sx)}" y1="{fmt(sy)}" x2="{fmt(sx)}" y2="{fmt(sy)}" '
@@ -224,24 +230,6 @@ def panel_a(animated: bool) -> str:
     out += sym(fx - 40, fy - 6, "&#7805;", "x", "syma", 16.0)
     out += sym(sx + 14, sy + VL * SP * CP + 40, "&#7805;", "y", "syma", 16.0)
 
-    # the turn part omega*p_x (vehicle-lateral = page up for a left turn), per step
-    for k, (v, lat) in enumerate(STEPS):
-        t = T0 + k * DT
-        tx, y2 = sx + VL * v, sy - LL * lat
-        raw = (f'<line x1="{fmt(sx)}" y1="{fmt(sy)}" x2="{fmt(tx)}" y2="{fmt(y2)}" '
-               f'class="rawv" marker-end="url(#tip)"/>')
-        arrow = (f'<line x1="{fmt(tx)}" y1="{fmt(sy)}" x2="{fmt(tx)}" y2="{fmt(y2)}" '
-                 f'class="lat" marker-end="url(#tip-b)"/>')
-        ly = (sy + y2) / 2 + 8
-        lab = (text(tx + 12, ly, "&#969;&#8201;p", "symb")
-               + text(tx + 58, ly + 9, "x", "symb-s"))
-        if animated:
-            out += f'<g opacity="0">{ghost(t + 0.5, t + 1.25)}{raw}</g>'
-            out += f'<g opacity="0">{fade(t + 0.5, t + 1.45)}{arrow}{lab}</g>'
-        else:
-            out += f'<g opacity="{0.9 if k == len(STEPS) - 1 else 0.3}">{raw}</g>'
-            if k == len(STEPS) - 1:
-                out += f'<g opacity="0.45">{arrow}{lab}</g>'
     return out
 
 
@@ -249,9 +237,9 @@ def panel_a(animated: bool) -> str:
 def panel_b(animated: bool) -> str:
     ox, oy = PO
     out = frame(PB_X, "The sensor's own frame",
-                "each dot: one sample, turn part removed",
-                ["hollow: raw reading, scattered by the turn part",
-                 "filled: turn part removed &#8212; one line through the origin"])
+                "the red vector from the left, plotted as (x&#771;, y&#771;)",
+                ["speed slides the dot back and forth along the line",
+                 "it never leaves it: one line through the origin"])
     # axes
     out += (f'<line x1="{fmt(ox)}" y1="{fmt(oy)}" x2="{fmt(ox + PL + 50)}" y2="{fmt(oy)}" '
             f'class="fg-arrow" marker-end="url(#tip)"/>'
@@ -266,23 +254,35 @@ def panel_b(animated: bool) -> str:
             f'{fmt(oy + 150 * SP)}" class="fg-thin"/>'
             + text(ox + 162, oy + 30, "&#968;", "sym")
             + text(ox + PL + 40, oy - 50, "slope = &#8722;tan&#8201;&#968;", "slope", "end"))
-    t_line = T0 + len(STEPS) * DT - 0.2
-    out += (f'<g opacity="0">{fade(t_line, LOOP)}{line}</g>' if animated else line)
+    out += (f'<g opacity="0">{fade(1.2, LOOP, peak=0.85)}{line}</g>' if animated else line)
 
-    for k, (v, lat) in enumerate(STEPS):
-        t = T0 + k * DT
-        fx, fy = ox + PL * v * CP, oy + PL * v * SP               # removed
-        rx, ry = fx - PL * LATP * lat * SP, fy - PL * LATP * lat * CP            # raw = + lat*(sin, cos) in y~-up
-        drop = (f'<line x1="{fmt(rx)}" y1="{fmt(ry)}" x2="{fmt(fx)}" y2="{fmt(fy)}" '
-                f'class="drop" marker-end="url(#tip-b)"/>')
-        raw = f'<circle cx="{fmt(rx)}" cy="{fmt(ry)}" r="10" class="raw"/>'
-        dot = f'<circle cx="{fmt(fx)}" cy="{fmt(fy)}" r="11" class="acc-fill"/>'
-        if animated:
-            out += f'<g opacity="0">{fade(t + 0.55, LOOP, peak=0.9)}{raw}</g>'
-            out += f'<g opacity="0">{fade(t + 0.95, t + 1.6)}{drop}</g>'
-            out += f'<g opacity="0">{fade(t + 1.2, LOOP)}{dot}</g>'
-        else:
-            out += f'<g opacity="0.9">{raw}</g>{dot}'
+    def at(v):                                            # sensor-frame point of speed v
+        return ox + PL * v * CP, oy + PL * v * SP
+    # trail: one faint dot per TRAIL seconds, each stays until the loop ends
+    n = int(LOOP / TRAIL)
+    for k in range(1, n):
+        t = k * TRAIL
+        if not animated and t > T_STATIC:
+            break
+        x, y = at(speed(t))
+        dot = f'<circle cx="{fmt(x)}" cy="{fmt(y)}" r="7" class="acc-fill"/>'
+        out += (f'<g opacity="0">{fade(t, LOOP, peak=0.35, rise=0.1)}{dot}</g>' if animated
+                else f'<g opacity="0.35">{dot}</g>')
+    # live: the body velocity expressed in the sensor frame, as arrow + dot
+    pts = speed_profile()
+    if animated:
+        out += (f'<line x1="{fmt(ox)}" y1="{fmt(oy)}" x2="{fmt(ox)}" y2="{fmt(oy)}" '
+                f'class="comp-strong" marker-end="url(#tip-a)">'
+                + anim_attr("x2", lambda v: at(v)[0], pts) + anim_attr("y2", lambda v: at(v)[1], pts)
+                + '</line>')
+        out += ('<circle cx="0" cy="0" r="12" class="acc-fill">'
+                + anim_attr("cx", lambda v: at(v)[0], pts) + anim_attr("cy", lambda v: at(v)[1], pts)
+                + '</circle>')
+    else:
+        x, y = at(speed(T_STATIC))
+        out += (f'<line x1="{fmt(ox)}" y1="{fmt(oy)}" x2="{fmt(x)}" y2="{fmt(y)}" '
+                f'class="comp-strong" marker-end="url(#tip-a)"/>'
+                f'<circle cx="{fmt(x)}" cy="{fmt(y)}" r="12" class="acc-fill"/>')
     return out
 
 

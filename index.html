@@ -302,12 +302,13 @@
         <picture>
           <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_yaw_static.svg">
           <img src="assets/hero/hero_yaw.svg"
-               alt="Two panels. Left, a car seen from above with a sensor mounted rotated by the yaw angle psi. In each turn the raw sensor velocity (grey) points in a different direction, because a blue lateral part, turn rate times lever arm, is added to the body velocity; once that part is removed, the remaining velocity always points along the car heading, at psi from the sensor's longitudinal axis, whatever the speed. Faded grey arrows keep the earlier raw directions visible. Right, the sensor's own frame: each sample drops a hollow raw dot, scattered by the turn part, and a filled dot once that part is removed; the filled dots of all speeds and all turns fall on one line through the origin whose angle to the longitudinal axis is psi, so its slope is minus tan psi.">
+               alt="Two panels. Left, a car seen from above with a sensor mounted rotated by the yaw angle psi. The black body velocity points along the heading and its length keeps changing with speed; the red arrows resolve that same velocity on the rotated sensor axes, so both components grow and shrink together while their ratio stays fixed. Right, the sensor's own frame: the red vector is plotted as (longitudinal, lateral) and its tip slides back and forth along one line through the origin, leaving a trail of samples; the angle of that line to the longitudinal axis is psi, so its slope is minus tan psi.">
         </picture>
         <figcaption>
-          Why the slope is the yaw. Schematic, synthetic values, <i>&psi;</i> exaggerated. The raw direction swings from turn to turn;
-          once <i>&omega;&thinsp;p<sub>x</sub></i> is removed the direction in the sensor frame is fixed by the mount, so the lever on yaw is forward
-          speed, not straight driving &mdash; a sample at zero forward speed sits on the origin and says nothing
+          Why the slope is the yaw. Schematic, synthetic values, <i>&psi;</i> exaggerated. The body velocity (black, with
+          <i>&omega;&thinsp;p<sub>x</sub></i> already removed) keeps changing size; seen on the sensor axes (red) both components
+          change together, so every sample slides along one line whose angle is the mount &mdash; the lever on yaw is forward
+          speed, not straight driving, and a sample at zero forward speed sits on the origin and says nothing
           about <i>&psi;</i>.
         </figcaption>
       </figure>
