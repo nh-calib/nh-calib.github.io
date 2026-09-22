@@ -1,15 +1,19 @@
 """Module-1 figure: four odometry front ends, one twist interface.
 
-Layout (v2 -- one horizontal box per dataset)
-  band A  A2D2 20180810_150607  : LiDAR scan | GNSS fixes | trajectory | twist strip
-  band B  RadarScenes sequence 1: Doppler fit | CAN frames | trajectory | twist strip
+Layout (v3 -- one vertical column per dataset, 2x2 inside)
+  left column   A2D2 20180810_150607  : LiDAR scan | GNSS fixes
+                                        trajectory | twist strip
+  right column  RadarScenes sequence 1: Doppler BEV | CAN frames
+                                        trajectory | twist strip
 
-Two things the reader has to get without reading a caption:
-  1. which panels belong to the same drive -- hence the tinted box and the
-     header bar that wrap a whole band, and the gap between bands;
-  2. that every front end leaves the same kind of output -- hence the
-     trajectory panel, drawn with identical styling in both bands, where the
-     two front ends of that drive are integrated from their own (v, omega).
+Three things the reader has to get without reading a caption:
+  1. which panels belong to the same drive -- hence the tinted column box and
+     its header bar, and the gap between the two columns;
+  2. that the top row is two unrelated physical devices -- hence one framed
+     card per device, in that device's own colour;
+  3. that both devices end in the same product -- hence the lower two panels
+     sit inside a single dashed ODOMETRY card, fed by an arrow from each of
+     the two device cards above it.
 
 Input : experiments/frontends/data/frontends_material_v2.npz
         (built on ailab-12 by extract_material_a2d2.py + extract_material_rs2.py)
@@ -52,11 +56,17 @@ DOPPLER_NORM = Normalize(vmin=-8.0, vmax=8.0)
 BANDS = {
     "a2d2": dict(accent="#3730a3", tint="#f4f6ff",
                  title="A2D2  ·  drive 20180810_150607",
-                 sub="two independent devices  ·  nothing shared: no field of view, no clock, no measured quantity"),
+                 sub="two devices  ·  no shared field of view, clock or quantity"),
     "rs": dict(accent="#9a3412", tint="#fff9f4",
                title="RadarScenes  ·  sequence 1",
-               sub="two independent devices  ·  nothing shared: no field of view, no clock, no measured quantity"),
+               sub="two devices  ·  no shared field of view, clock or quantity"),
 }
+
+#: figure size.  The header row offsets below are figure fractions, so they are
+#: written against this height and rescaled if it changes -- otherwise a taller
+#: canvas silently inflates every header gap.
+FIG_W, FIG_H = 16.4, 11.4
+_HS = 9.9 / FIG_H
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans",
@@ -176,9 +186,13 @@ def radar_doppler_bev(ax, az, vr, rng, n_highlight=14):
 
 
 #: vertical offsets of the four header rows, in figure fraction above the axes
-ROW_TITLE, ROW_DEVICE, ROW_MEASURES, ROW_SUB = 0.049, 0.033, 0.019, 0.005
+ROW_TITLE, ROW_DEVICE, ROW_MEASURES, ROW_SUB = (0.049 * _HS, 0.033 * _HS,
+                                                0.019 * _HS, 0.005 * _HS)
 #: top edge of a per-device frame, measured above the axes
-HEAD_TOP = 0.067
+HEAD_TOP = 0.067 * _HS
+#: top edge of the ODOMETRY frame -- clears the two-row panel header plus its
+#: own label row, so the label never lands on "Trajectory from (v, w)".
+OD_TOP = 0.067 * _HS + 0.030
 
 
 #: header artists per axes, so sensor_box can size a frame around the text
@@ -249,29 +263,73 @@ def sensor_box(fig, axes, color):
     x1 = max(b.x1 for b in bbs)
     y0 = min(b.y0 for b in bbs)
     y1 = max(a.get_position().y1 for a in axes) + HEAD_TOP
-    px, pyb = 0.0050, 0.010
+    px, pyb = 0.0050, 0.009
     fig.add_artist(FancyBboxPatch(
         (x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyb,
         boxstyle="round,pad=0.003,rounding_size=0.009",
         transform=fig.transFigure, facecolor=_wash(color),
         edgecolor=color, linewidth=1.0, alpha=0.95, zorder=-4.5))
-    return x0 - px, x1 + px
+    return x0 - px, x1 + px, y0 - pyb
 
 
-def merge_arrow(fig, a2, x_from, accent):
-    """Arrow from the second device frame into the shared trajectory panel.
+def odometry_box(fig, axes, accent, note):
+    """Dashed card around the lower two panels of a column.
 
-    The separation between the two raw columns is carried by the frames
-    themselves, so nothing is drawn between them; this arrow is the one piece
-    of grammar left -- it marks where two unrelated devices stop being
-    different and become the same two numbers.
+    The two device cards above say "different box, different quantity".  This
+    one says "and here they stop being different": the trajectory and the twist
+    strip are not two more panels in the row, they are the single product that
+    both devices were reduced to.  Returned is the top-centre anchor the feed
+    arrows aim at.
     """
     r = fig.canvas.get_renderer()
-    tb = a2.get_tightbbox(r).transformed(fig.transFigure.inverted())
-    yc = 0.5 * (a2.get_position().y0 + a2.get_position().y1)
+    inv = fig.transFigure.inverted()
+    bbs = [a.get_tightbbox(r).transformed(inv) for a in axes]
+    bbs += [t.get_window_extent(r).transformed(inv)
+            for a in axes for t in _HEAD.get(a, [])]
+    x0 = min(b.x0 for b in bbs)
+    x1 = max(b.x1 for b in bbs)
+    y0 = min(b.y0 for b in bbs)
+    y1 = max(a.get_position().y1 for a in axes) + OD_TOP
+    px, pyb = 0.0058, 0.011
+    fig.add_artist(FancyBboxPatch(
+        (x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyb,
+        boxstyle="round,pad=0.003,rounding_size=0.010",
+        transform=fig.transFigure, facecolor="white", alpha=0.90,
+        edgecolor=accent, linewidth=1.5, linestyle=(0, (5.0, 2.4)),
+        zorder=-4.2))
+    ylab = y1 - 0.0175
+    fig.add_artist(Rectangle(
+        (x0 - px + 0.004, ylab - 0.0015), 0.0042, 0.0165,
+        transform=fig.transFigure, facecolor=accent, edgecolor="none",
+        zorder=-3.8))
+    fig.text(x0 - px + 0.0135, ylab, "ODOMETRY", ha="left", va="bottom",
+             fontsize=10.2, fontweight="bold", color=accent, zorder=-3.6)
+    fig.text(x1 + px - 0.004, ylab + 0.0015, note, ha="right", va="bottom",
+             fontsize=7.4, color=MUT, zorder=-3.6)
+    return 0.5 * (x0 + x1), y1
+
+
+def feed_arrow(fig, src, dst, color):
+    """Straight arrow from a device card down into the ODOMETRY card."""
     fig.add_artist(FancyArrowPatch(
-        (x_from + 0.005, yc), (tb.x0 - 0.006, yc), transform=fig.transFigure,
-        arrowstyle="-|>", mutation_scale=15, lw=2.1, color=accent, zorder=5))
+        src, dst, transform=fig.transFigure, arrowstyle="-|>",
+        mutation_scale=15, lw=2.1, color=color, alpha=0.92,
+        shrinkA=0, shrinkB=0, zorder=6))
+
+
+def assemble(fig, devA, devB, odo, colors, accent, note):
+    """Draw one column's grammar: two device cards, one ODOMETRY card, two feeds.
+
+    devA/devB/odo are lists of axes (a twin y-axis carries its own tick labels
+    and must be listed, or the frame clips them).
+    """
+    cA, cB = colors
+    bA = sensor_box(fig, devA, cA)
+    bB = sensor_box(fig, devB, cB)
+    ox, oy = odometry_box(fig, odo, accent, note)
+    for box, color, dx in ((bA, cA, -0.013), (bB, cB, +0.013)):
+        feed_arrow(fig, (0.5 * (box[0] + box[1]), box[2] - 0.004),
+                   (ox + dx, oy + 0.004), color)
 
 
 def band_box(fig, axes, cfg):
@@ -283,21 +341,21 @@ def band_box(fig, axes, cfg):
     x1 = max(b.x1 for b in tbs)
     y0 = min(b.y0 for b in tbs)
     y1 = max(a.get_position().y1 for a in axes)
-    px, pyt, pyb = 0.013, 0.112, 0.021
+    px, pyt, pyb = 0.013, 0.090, 0.019
     box = FancyBboxPatch((x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyt + pyb,
                          boxstyle="round,pad=0.004,rounding_size=0.012",
                          transform=fig.transFigure, facecolor=cfg["tint"],
                          edgecolor=cfg["accent"], linewidth=1.2, zorder=-5)
     fig.add_artist(box)
-    yh = y1 + pyt - 0.022
+    yh = y1 + pyt - 0.020
     fig.add_artist(FancyBboxPatch(
-        (x0 - px + 0.005, yh - 0.012), 0.0060, 0.026,
+        (x0 - px + 0.005, yh - 0.011), 0.0060, 0.023,
         boxstyle="square,pad=0", transform=fig.transFigure,
         facecolor=cfg["accent"], edgecolor="none", zorder=-4))
     fig.text(x0 - px + 0.018, yh, cfg["title"], ha="left", va="center",
              fontsize=12.2, fontweight="bold", color=cfg["accent"], zorder=-3)
     fig.text(x1 + px - 0.005, yh, cfg["sub"], ha="right", va="center",
-             fontsize=8.2, color=MUT, zorder=-3)
+             fontsize=7.9, color=MUT, zorder=-3)
     for a in axes:
         a.set_facecolor("white")
         a.patch.set_alpha(1.0)
@@ -356,17 +414,21 @@ def main():
                                          ct, cvx)),
     }
 
-    fig = plt.figure(figsize=(16.2, 9.9), dpi=135)
-    outer = fig.add_gridspec(2, 1, hspace=0.80, left=0.052, right=0.980,
-                             top=0.812, bottom=0.070)
-    WR = [1.02, 1.02, 0.92, 1.36]
+    fig = plt.figure(figsize=(FIG_W, FIG_H), dpi=135)
+    # right edge stops well short of 1.0: the column frame is fitted to the
+    # tight bbox, so the rightmost twin-axis tick labels push it further right
+    # than the axes themselves and would otherwise be clipped.
+    outer = fig.add_gridspec(1, 2, wspace=0.200, left=0.050, right=0.958,
+                             top=0.822, bottom=0.058)
 
-    def make_band(row):
-        g = outer[row].subgridspec(1, 4, width_ratios=WR, wspace=0.42)
+    def make_band(col):
+        """one dataset = one 2x2 column: two devices on top, odometry below."""
+        g = outer[col].subgridspec(2, 2, hspace=0.60, wspace=0.36,
+                                   height_ratios=[1.0, 0.96])
         a0 = fig.add_subplot(g[0, 0])
         a1 = fig.add_subplot(g[0, 1])
-        a2 = fig.add_subplot(g[0, 2])
-        sg = g[0, 3].subgridspec(2, 1, hspace=0.16)
+        a2 = fig.add_subplot(g[1, 0])
+        sg = g[1, 1].subgridspec(2, 1, hspace=0.16)
         s0 = fig.add_subplot(sg[0, 0])
         s1 = fig.add_subplot(sg[1, 0], sharex=s0)
         return a0, a1, a2, s0, s1
@@ -374,12 +436,12 @@ def main():
     A0, A1, A2, AS0, AS1 = make_band(0)
     B0, B1, B2, BS0, BS1 = make_band(1)
 
-    fig.text(0.052, 0.972, "One interface, four front ends",
+    fig.text(0.050, 0.976, "One interface, four front ends",
              fontsize=17.5, fontweight="bold", ha="left", va="center", color=FG)
-    fig.text(0.052, 0.938,
-             "Each tinted box is one drive; the two left panels of a box are two different devices on that "
-             "car.  Badge “paper” marks the front end used in the paper’s experiments, “demo” the second "
-             "device shown to make the interface point.",
+    fig.text(0.050, 0.948,
+             "Each tinted column is one drive: two different physical devices on top, and the dashed "
+             "ODOMETRY card below holding what both of them were reduced to.  Badge “paper” marks the "
+             "front end used in the paper’s experiments.",
              fontsize=9.3, ha="left", va="center", color=MUT)
 
     # ============================================================== band A: A2D2
@@ -539,10 +601,12 @@ def main():
     fig.canvas.draw()
     band_box(fig, [A0, A1, A2, AS0, AS1], BANDS["a2d2"])
     band_box(fig, [B0, B1, B2, BS0, BS1], BANDS["rs"])
-    sensor_box(fig, [A0], C_LIDAR)
-    sensor_box(fig, [B0], C_RADAR)
-    merge_arrow(fig, A2, sensor_box(fig, [A1], C_GNSS)[1], BANDS["a2d2"]["accent"])
-    merge_arrow(fig, B2, sensor_box(fig, [B1, B1b], C_CAN)[1], BANDS["rs"]["accent"])
+    assemble(fig, [A0], [A1], [A2, AS0, AS1], (C_LIDAR, C_GNSS),
+             BANDS["a2d2"]["accent"],
+             "both devices deliver (v, ω) on their own clock")
+    assemble(fig, [B0], [B1, B1b], [B2, BS0, BS1], (C_RADAR, C_CAN),
+             BANDS["rs"]["accent"],
+             "both devices deliver (v, ω) on their own clock")
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     png = OUTDIR / "frontends_real.png"

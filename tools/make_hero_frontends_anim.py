@@ -1,9 +1,11 @@
-"""Animated version of the four-front-end figure (v2 layout).
+"""Animated version of the four-front-end figure (v3 layout).
 
-Same two dataset boxes as the still, replayed over the 20 s window: the point
-cloud and the radar scan advance with the drive, the CAN strip slides, and both
-trajectory panels grow a trail.  The trail is the point of the animation --
-four different sensors, four different raw panels, one identical path product.
+Same two dataset columns as the still -- two device cards on top, one dashed
+ODOMETRY card below, fed by an arrow from each device -- replayed over the 20 s
+window: the point cloud and the radar scan advance with the drive, the CAN
+strip slides, and both trajectory panels grow a trail.  The trail is the point
+of the animation -- four different sensors, four different raw panels, one
+identical path product.
 
 Inputs : experiments/frontends/data/frontends_material_v2.npz
          experiments/frontends/data/frontends_sequence_v2.npz
@@ -29,6 +31,11 @@ import make_hero_frontends as S
 ROOT = Path(__file__).resolve().parents[2]
 SEQ = ROOT / "experiments" / "frontends" / "data" / "frontends_sequence_v2.npz"
 
+# Workers read the output directory from the environment, not from a global set
+# under __main__: on a spawn-start platform (Windows) the child re-imports this
+# module and would otherwise raise NameError on OUTDIR.
+OUTDIR = Path(os.environ.get("FR_OUTDIR", "/tmp/frontends_frames"))
+
 # NpzFile reads lazily from one file handle; forked workers would share it and
 # trip zipfile's overlapped-entry guard, so materialise both bundles up front.
 Z = dict(np.load(S.SRC))
@@ -53,16 +60,14 @@ def _prep():
     d["ct"], d["cvx"], d["cwz"] = Z["rs_can_t"], Z["rs_can_vx"], Z["rs_can_wz"]
     rwz = np.interp(d["rt"], d["ct"], d["cwz"])
 
-    axl, ayl = S.integrate(d["lt"], d["lvf"], d["lvl"], d["lwz"])
-    axg, ayg = S.integrate(d["gt"], d["gv"], np.zeros_like(d["gv"]), d["gwz"])
-    bxr, byr = S.integrate(d["rt"], d["rvy"], d["rvx"], rwz)
-    bxc, byc = S.integrate(d["ct"], d["cvx"], np.zeros_like(d["cvx"]), d["cwz"])
-    ra = S.principal_angle(np.r_[axl, axg], np.r_[ayl, ayg])
-    rb = S.principal_angle(np.r_[bxr, bxc], np.r_[byr, byc])
-    d["axl"], d["ayl"] = S.rot(axl, ayl, ra)
-    d["axg"], d["ayg"] = S.rot(axg, ayg, ra)
-    d["bxr"], d["byr"] = S.rot(bxr, byr, rb)
-    d["bxc"], d["byc"] = S.rot(bxc, byc, rb)
+    # 2026-09-22: no display rotation, matching the still.  The still dropped
+    # principal_angle() so the path is drawn in the vehicle frame at t=0, the
+    # same frame as the raw-sensor panels; keeping the rotation here would have
+    # left the page showing the same drive at two different orientations.
+    d["axl"], d["ayl"] = S.integrate(d["lt"], d["lvf"], d["lvl"], d["lwz"])
+    d["axg"], d["ayg"] = S.integrate(d["gt"], d["gv"], np.zeros_like(d["gv"]), d["gwz"])
+    d["bxr"], d["byr"] = S.integrate(d["rt"], d["rvy"], d["rvx"], rwz)
+    d["bxc"], d["byc"] = S.integrate(d["ct"], d["cvx"], np.zeros_like(d["cvx"]), d["cwz"])
 
     def lims(xs, ys, pad=0.08):
         x0, x1 = min(x.min() for x in xs), max(x.max() for x in xs)
@@ -107,15 +112,17 @@ def _grown(ax, t, v, T, color, lw, ls="-", marker=None):
 
 def render(i):
     T = float(FT[i])
-    fig = plt.figure(figsize=(16.2, 9.9), dpi=120)
-    outer = fig.add_gridspec(2, 1, hspace=0.80, left=0.052, right=0.980,
-                             top=0.812, bottom=0.070)
-    WR = [1.02, 1.02, 0.92, 1.36]
+    fig = plt.figure(figsize=(S.FIG_W, S.FIG_H), dpi=120)
+    outer = fig.add_gridspec(1, 2, wspace=0.200, left=0.050, right=0.958,
+                             top=0.822, bottom=0.058)
 
-    def band(row):
-        g = outer[row].subgridspec(1, 4, width_ratios=WR, wspace=0.42)
-        a0, a1, a2 = (fig.add_subplot(g[0, j]) for j in range(3))
-        sg = g[0, 3].subgridspec(2, 1, hspace=0.16)
+    def band(col):
+        g = outer[col].subgridspec(2, 2, hspace=0.60, wspace=0.36,
+                                   height_ratios=[1.0, 0.96])
+        a0 = fig.add_subplot(g[0, 0])
+        a1 = fig.add_subplot(g[0, 1])
+        a2 = fig.add_subplot(g[1, 0])
+        sg = g[1, 1].subgridspec(2, 1, hspace=0.16)
         s0 = fig.add_subplot(sg[0, 0])
         s1 = fig.add_subplot(sg[1, 0], sharex=s0)
         return a0, a1, a2, s0, s1
@@ -123,14 +130,14 @@ def render(i):
     A0, A1, A2, AS0, AS1 = band(0)
     B0, B1, B2, BS0, BS1 = band(1)
 
-    fig.text(0.052, 0.972, "One interface, four front ends",
+    fig.text(0.050, 0.976, "One interface, four front ends",
              fontsize=17.5, fontweight="bold", ha="left", va="center", color=S.FG)
-    fig.text(0.052, 0.938,
-             "Each tinted box is one drive; the two left panels of a box are two different devices "
-             "on that car.  Badge “paper” marks the front end used in the paper’s "
-             "experiments, “demo” the second device shown to make the interface point.",
+    fig.text(0.050, 0.948,
+             "Each tinted column is one drive: two different physical devices on top, and the dashed "
+             "ODOMETRY card below holding what both of them were reduced to.  Badge “paper” marks the "
+             "front end used in the paper’s experiments.",
              fontsize=9.3, ha="left", va="center", color=S.MUT)
-    fig.text(0.980, 0.972, "t = %5.2f s" % T, fontsize=12.0, ha="right", va="center",
+    fig.text(0.958, 0.976, "t = %5.2f s" % T, fontsize=12.0, ha="right", va="center",
              color=S.MUT, family="DejaVu Sans Mono")
 
     # ------------------------------------------------------------- band A
@@ -180,7 +187,7 @@ def render(i):
     A2.set_xlim(*D["limA"][0])
     A2.set_ylim(*D["limA"][1])
     A2.set_aspect("equal", adjustable="datalim")
-    A2.set_xlabel("x [m]", fontsize=7.8)
+    A2.set_xlabel("x [m]  (vehicle frame at t=0)", fontsize=7.8)
     A2.set_ylabel("y [m]", fontsize=7.8)
     S.tidy(A2)
     A2.legend(handles=[Line2D([], [], color=S.C_LIDAR, lw=2.4, label="from LiDAR twist"),
@@ -271,7 +278,7 @@ def render(i):
     B2.set_xlim(*D["limB"][0])
     B2.set_ylim(*D["limB"][1])
     B2.set_aspect("equal", adjustable="datalim")
-    B2.set_xlabel("x [m]", fontsize=7.8)
+    B2.set_xlabel("x [m]  (vehicle frame at t=0)", fontsize=7.8)
     B2.set_ylabel("y [m]", fontsize=7.8)
     S.tidy(B2)
     B2.legend(handles=[Line2D([], [], color=S.C_RADAR, lw=2.4, label="from radar twist"),
@@ -303,12 +310,12 @@ def render(i):
     fig.canvas.draw()
     S.band_box(fig, [A0, A1, A2, AS0, AS1], S.BANDS["a2d2"])
     S.band_box(fig, [B0, B1, B2, BS0, BS1], S.BANDS["rs"])
-    S.sensor_box(fig, [A0], S.C_LIDAR)
-    S.sensor_box(fig, [B0], S.C_RADAR)
-    S.merge_arrow(fig, A2, S.sensor_box(fig, [A1], S.C_GNSS)[1],
-                  S.BANDS["a2d2"]["accent"])
-    S.merge_arrow(fig, B2, S.sensor_box(fig, [B1, B1b], S.C_CAN)[1],
-                  S.BANDS["rs"]["accent"])
+    S.assemble(fig, [A0], [A1], [A2, AS0, AS1], (S.C_LIDAR, S.C_GNSS),
+               S.BANDS["a2d2"]["accent"],
+               "both devices deliver (v, ω) on their own clock")
+    S.assemble(fig, [B0], [B1, B1b], [B2, BS0, BS1], (S.C_RADAR, S.C_CAN),
+               S.BANDS["rs"]["accent"],
+               "both devices deliver (v, ω) on their own clock")
 
     out = OUTDIR / ("%05d.png" % i)
     fig.savefig(out, dpi=120, facecolor="white")
@@ -318,6 +325,7 @@ def render(i):
 
 if __name__ == "__main__":
     OUTDIR = Path(sys.argv[1] if len(sys.argv) > 1 else "/tmp/frontends_frames")
+    os.environ["FR_OUTDIR"] = str(OUTDIR)
     OUTDIR.mkdir(parents=True, exist_ok=True)
     nw = int(sys.argv[2]) if len(sys.argv) > 2 else 8
     idx = list(range(len(FT)))

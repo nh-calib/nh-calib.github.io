@@ -302,10 +302,10 @@ footer {
 .hero-stage1-real .hero-media,
 .hero-stage1-real .hero-still { aspect-ratio: 20 / 9; }
 
-/* the four-front-end replay is rendered 1944x1188; the 20:9 rule above would
-   crop its bottom strip away */
+/* the four-front-end replay is rendered 1968x1368 (two dataset columns side by
+   side, two rows each); the 20:9 rule above would crop its bottom row away */
 .hero-frontends .hero-media,
-.hero-frontends .hero-still { aspect-ratio: 1944 / 1188; }
+.hero-frontends .hero-still { aspect-ratio: 1968 / 1368; }
 
 .hero-concept img {
   display: block;
