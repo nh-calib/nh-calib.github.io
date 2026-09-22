@@ -16,6 +16,7 @@ Input : experiments/frontends/data/frontends_material_v2.npz
 Output: project_page/assets/frontends_real.png (+ .pdf, + meta json)
 """
 import json
+import weakref
 from pathlib import Path
 
 import numpy as np
@@ -27,6 +28,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.colors import to_rgb
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "experiments" / "frontends" / "data" / "frontends_material_v2.npz"
@@ -175,6 +177,15 @@ def radar_doppler_bev(ax, az, vr, rng, n_highlight=14):
 
 #: vertical offsets of the four header rows, in figure fraction above the axes
 ROW_TITLE, ROW_DEVICE, ROW_MEASURES, ROW_SUB = 0.049, 0.033, 0.019, 0.005
+#: top edge of a per-device frame, measured above the axes
+HEAD_TOP = 0.067
+
+
+#: header artists per axes, so sensor_box can size a frame around the text
+#: rows as well as the plot (the device line is usually the widest thing here).
+#: weak keys: the animation builds hundreds of figures in one process, and
+#: id()-keyed entries would go stale and be silently reused.
+_HEAD = weakref.WeakKeyDictionary()
 
 
 def head(ax, text, sub, color, badge=None, device=None, measures=None):
@@ -193,17 +204,20 @@ def head(ax, text, sub, color, badge=None, device=None, measures=None):
             (bb.x0, bb.y1 + ROW_TITLE - 0.0035), 0.0045, 0.0185,
             transform=fig.transFigure, facecolor=color, edgecolor="none",
             zorder=6))
-    fig.text(x, bb.y1 + ROW_TITLE, text, ha="left", va="bottom",
-             fontsize=9.8, fontweight="bold", color=color)
-    fig.text(x, bb.y1 + (ROW_DEVICE if device else ROW_DEVICE),
-             device if device else sub, ha="left", va="bottom",
-             fontsize=7.3 if device else 7.5, color=FG if device else MUT)
+    rows = [fig.text(x, bb.y1 + ROW_TITLE, text, ha="left", va="bottom",
+                     fontsize=9.8, fontweight="bold", color=color),
+            fig.text(x, bb.y1 + ROW_DEVICE, device if device else sub,
+                     ha="left", va="bottom",
+                     fontsize=7.3 if device else 7.5,
+                     color=FG if device else MUT)]
     if measures:
-        fig.text(x, bb.y1 + ROW_MEASURES, measures, ha="left", va="bottom",
-                 fontsize=6.7, color=MUT, style="italic")
+        rows.append(fig.text(x, bb.y1 + ROW_MEASURES, measures, ha="left",
+                             va="bottom", fontsize=6.7, color=MUT,
+                             style="italic"))
     if device:
-        fig.text(x, bb.y1 + ROW_SUB, sub, ha="left", va="bottom",
-                 fontsize=7.0, color=MUT)
+        rows.append(fig.text(x, bb.y1 + ROW_SUB, sub, ha="left", va="bottom",
+                             fontsize=7.0, color=MUT))
+    _HEAD[ax] = rows
     if badge:
         label, bc = badge
         fig.text(bb.x1, bb.y1 + ROW_TITLE + 0.001, label,
@@ -212,41 +226,64 @@ def head(ax, text, sub, color, badge=None, device=None, measures=None):
                  bbox=dict(boxstyle="round,pad=0.30", fc=bc, ec="none"))
 
 
-def split_and_merge(fig, a0, a1, a2, accent):
-    """Draw the band's grammar between the panels.
+def _wash(color, k=0.93):
+    """color mixed k of the way to white -- a fill light enough to draw on."""
+    return tuple(k + (1 - k) * c for c in to_rgb(color))
 
-    Between the two raw panels: a dashed rule, because those two columns are
-    unrelated hardware — different quantity, different rate, different clock.
-    Between the second raw panel and the trajectory: an arrow, because that is
-    where the two of them stop being different.
+
+def sensor_box(fig, axes, color):
+    """Independent frame around ONE physical device.
+
+    The band box says "this is one drive".  This says "this is one box bolted
+    to that car": it wraps the panel together with its four header rows, in the
+    device's own colour, so the two left columns cannot be read as one stream
+    plotted twice.  Pass every axes that belongs to the device (a twin y-axis
+    carries its own tick labels and must be included or the frame clips them).
     """
-    p0, p1, p2 = a0.get_position(), a1.get_position(), a2.get_position()
-    yc = 0.5 * (p0.y0 + p0.y1)
-    xs = p0.x1 + 0.0075
-    fig.add_artist(Line2D([xs, xs], [p0.y0 - 0.006, p0.y1 + 0.012],
-                          transform=fig.transFigure, color="#aab3c0",
-                          lw=0.9, ls=(0, (3, 3)), zorder=4))
-    fig.text(xs, yc, "different device\ndifferent quantity", rotation=90,
-             ha="center", va="center", fontsize=6.4, color="#7c8796",
-             linespacing=1.5, zorder=5,
-             bbox=dict(boxstyle="round,pad=0.30", fc="white", ec="none", alpha=0.97))
+    r = fig.canvas.get_renderer()
+    inv = fig.transFigure.inverted()
+    bbs = [a.get_tightbbox(r).transformed(inv) for a in axes]
+    bbs += [t.get_window_extent(r).transformed(inv)
+            for a in axes for t in _HEAD.get(a, [])]
+    x0 = min(b.x0 for b in bbs)
+    x1 = max(b.x1 for b in bbs)
+    y0 = min(b.y0 for b in bbs)
+    y1 = max(a.get_position().y1 for a in axes) + HEAD_TOP
+    px, pyb = 0.0050, 0.010
+    fig.add_artist(FancyBboxPatch(
+        (x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyb,
+        boxstyle="round,pad=0.003,rounding_size=0.009",
+        transform=fig.transFigure, facecolor=_wash(color),
+        edgecolor=color, linewidth=1.0, alpha=0.95, zorder=-4.5))
+    return x0 - px, x1 + px
 
-    xm = p1.x1 + 0.019
+
+def merge_arrow(fig, a2, x_from, accent):
+    """Arrow from the second device frame into the shared trajectory panel.
+
+    The separation between the two raw columns is carried by the frames
+    themselves, so nothing is drawn between them; this arrow is the one piece
+    of grammar left -- it marks where two unrelated devices stop being
+    different and become the same two numbers.
+    """
+    r = fig.canvas.get_renderer()
+    tb = a2.get_tightbbox(r).transformed(fig.transFigure.inverted())
+    yc = 0.5 * (a2.get_position().y0 + a2.get_position().y1)
     fig.add_artist(FancyArrowPatch(
-        (xm - 0.0080, yc), (xm + 0.0080, yc), transform=fig.transFigure,
+        (x_from + 0.005, yc), (tb.x0 - 0.006, yc), transform=fig.transFigure,
         arrowstyle="-|>", mutation_scale=15, lw=2.1, color=accent, zorder=5))
-    # no caption on the arrow: the gap between a twin-axis panel and the next
-    # y-axis label is barely wider than the arrow itself, and the band strapline
-    # plus the trajectory panel title already say it.
 
 
 def band_box(fig, axes, cfg):
     """tinted rounded frame + header bar around every axes of one dataset."""
-    x0 = min(a.get_position().x0 for a in axes)
-    x1 = max(a.get_position().x1 for a in axes)
-    y0 = min(a.get_position().y0 for a in axes)
+    r = fig.canvas.get_renderer()
+    inv = fig.transFigure.inverted()
+    tbs = [a.get_tightbbox(r).transformed(inv) for a in axes]
+    x0 = min(b.x0 for b in tbs)
+    x1 = max(b.x1 for b in tbs)
+    y0 = min(b.y0 for b in tbs)
     y1 = max(a.get_position().y1 for a in axes)
-    px, pyt, pyb = 0.017, 0.112, 0.055
+    px, pyt, pyb = 0.013, 0.112, 0.021
     box = FancyBboxPatch((x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyt + pyb,
                          boxstyle="round,pad=0.004,rounding_size=0.012",
                          transform=fig.transFigure, facecolor=cfg["tint"],
@@ -325,7 +362,7 @@ def main():
     WR = [1.02, 1.02, 0.92, 1.36]
 
     def make_band(row):
-        g = outer[row].subgridspec(1, 4, width_ratios=WR, wspace=0.33)
+        g = outer[row].subgridspec(1, 4, width_ratios=WR, wspace=0.42)
         a0 = fig.add_subplot(g[0, 0])
         a1 = fig.add_subplot(g[0, 1])
         a2 = fig.add_subplot(g[0, 2])
@@ -445,7 +482,7 @@ def main():
          C_RADAR, ("paper", BADGE_PAPER),
          device="77 GHz series radar, sensor 1  ·  %.1f scans/s"
                 % (meta["rs_usable_scans"] / meta["window_s"]),
-         measures="range, azimuth, radial Doppler  →  one-scan least squares")
+         measures="range, azimuth, Doppler  →  one-scan least squares")
 
     zm = (ct >= 6.0) & (ct <= 8.0)
     B1.step(ct[zm], cvx[zm] * 3.6, where="post", color=C_CAN, lw=1.5)
@@ -462,7 +499,7 @@ def main():
     B1.set_xlabel("time in window [s]", fontsize=7.8)
     tidy(B1)
     head(B1, "SENSOR B  ·  CAN bus",
-         "shown: 2 s zoom of %d messages" % len(ct),
+         "shown: 2 s zoom of the window",
          C_CAN, ("demo", BADGE_SAME),
          device="wheel encoders + yaw-rate gyro  ·  %.0f Hz"
                 % (len(ct) / meta["window_s"]),
@@ -502,8 +539,10 @@ def main():
     fig.canvas.draw()
     band_box(fig, [A0, A1, A2, AS0, AS1], BANDS["a2d2"])
     band_box(fig, [B0, B1, B2, BS0, BS1], BANDS["rs"])
-    split_and_merge(fig, A0, A1, A2, BANDS["a2d2"]["accent"])
-    split_and_merge(fig, B0, B1, B2, BANDS["rs"]["accent"])
+    sensor_box(fig, [A0], C_LIDAR)
+    sensor_box(fig, [B0], C_RADAR)
+    merge_arrow(fig, A2, sensor_box(fig, [A1], C_GNSS)[1], BANDS["a2d2"]["accent"])
+    merge_arrow(fig, B2, sensor_box(fig, [B1, B1b], C_CAN)[1], BANDS["rs"]["accent"])
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     png = OUTDIR / "frontends_real.png"

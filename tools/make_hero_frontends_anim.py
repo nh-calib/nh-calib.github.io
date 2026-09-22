@@ -113,7 +113,7 @@ def render(i):
     WR = [1.02, 1.02, 0.92, 1.36]
 
     def band(row):
-        g = outer[row].subgridspec(1, 4, width_ratios=WR, wspace=0.33)
+        g = outer[row].subgridspec(1, 4, width_ratios=WR, wspace=0.42)
         a0, a1, a2 = (fig.add_subplot(g[0, j]) for j in range(3))
         sg = g[0, 3].subgridspec(2, 1, hspace=0.16)
         s0 = fig.add_subplot(sg[0, 0])
@@ -240,7 +240,7 @@ def render(i):
            % (len(az), len(picked)), S.C_RADAR, ("paper", S.BADGE_PAPER),
            device="77 GHz series radar, sensor 1  ·  %.1f scans/s"
                   % (META["rs_usable_scans"] / WIN),
-           measures="range, azimuth, radial Doppler  →  one-scan least squares")
+           measures="range, azimuth, Doppler  →  one-scan least squares")
 
     lo = min(max(T - 1.0, 0.0), WIN - 2.0)
     zm = (D["ct"] >= lo) & (D["ct"] <= lo + 2.0)
@@ -303,8 +303,12 @@ def render(i):
     fig.canvas.draw()
     S.band_box(fig, [A0, A1, A2, AS0, AS1], S.BANDS["a2d2"])
     S.band_box(fig, [B0, B1, B2, BS0, BS1], S.BANDS["rs"])
-    S.split_and_merge(fig, A0, A1, A2, S.BANDS["a2d2"]["accent"])
-    S.split_and_merge(fig, B0, B1, B2, S.BANDS["rs"]["accent"])
+    S.sensor_box(fig, [A0], S.C_LIDAR)
+    S.sensor_box(fig, [B0], S.C_RADAR)
+    S.merge_arrow(fig, A2, S.sensor_box(fig, [A1], S.C_GNSS)[1],
+                  S.BANDS["a2d2"]["accent"])
+    S.merge_arrow(fig, B2, S.sensor_box(fig, [B1, B1b], S.C_CAN)[1],
+                  S.BANDS["rs"]["accent"])
 
     out = OUTDIR / ("%05d.png" % i)
     fig.savefig(out, dpi=120, facecolor="white")
