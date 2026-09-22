@@ -459,3 +459,8 @@ footer {
   text-transform: uppercase;
   color: var(--muted);
 }
+
+/* --- S1a hero video ------------------------------------------------- */
+.hero-top { width: 100%; max-width: 960px; margin: 22px auto 0; }
+.hero-top figure { margin: 0; }
+.hero-top-media { display: block; width: 100%; aspect-ratio: 16 / 9; background: #fff; border: 1px solid var(--rule); }
