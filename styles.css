@@ -293,6 +293,7 @@ footer {
 .hero-frontends,
 .hero-stage0,
 .hero-stage1,
+.hero-stage1-geom,
 .hero-stage1-real,
 .hero-stage1-knobs,
 .hero-stage1-yaw,
@@ -310,6 +311,10 @@ footer {
    side, two rows each); the 20:9 rule above would crop its bottom row away */
 .hero-frontends .hero-media,
 .hero-frontends .hero-still { aspect-ratio: 1968 / 1368; }
+
+/* the four-step geometry schematic is a wide two-panel SVG (1600x920) */
+.hero-stage1-geom { max-width: 1180px; }
+.hero-concept.hero-stage1-geom img { aspect-ratio: 1600 / 920; }
 
 /* the lever-arm schematic is a single panel since 2026-09-22 */
 .hero-stage1 { max-width: 620px; }
