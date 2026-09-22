@@ -398,21 +398,15 @@ STYLE = f"""
     .syma-s {{ font-size: 21px; font-weight: 700; fill: {ACC}; }}
 """
 
-RIBBON_1 = ("Lateral velocity is not free: the turn rate and the "
-            "longitudinal lever arm fix it.")
-RIBBON_2 = ("One sensor, one scalar per frame &#8212; no target, no shared field of view, "
-            "no point correspondence.")
+RIBBON_1 = "Turning slides a forward sensor sideways."
+RIBBON_2 = "Lateral velocity = turn rate &#215; longitudinal lever arm."
 
-TITLE = "How one sensor reads its own lever arm and yaw offset out of vehicle motion"
+TITLE = "A turn induces a lateral sensor velocity equal to turn rate times the longitudinal lever arm"
 DESC = (
-    "Schematic. Left panel: a vehicle moving forward through a gentle turn. Forward speed "
-    "makes yaw observable, while each accepted curvature couples yaw and longitudinal lever "
-    "arm differently. Right panel: the same vehicle in a steady turn about an instantaneous centre of "
-    "rotation. The axle point is still lateral-free, while the sensor, mounted a lever arm "
-    "ahead of it, gains a lateral velocity equal to the turn rate times that lever arm. A "
-    "readout below plots lateral velocity against turn rate: the near-zero turn-rate band is "
-    "gated out and accepted turns constrain yaw and lever arm jointly. No numbers with units "
-    "appear; the figure is a mechanism sketch, not a measurement."
+    "Schematic. A vehicle turns steadily about an instantaneous centre of rotation. "
+    "The axle point has no lateral velocity, while the sensor, mounted a lever arm "
+    "ahead of it, gains a lateral velocity equal to the turn rate times that lever arm. "
+    "No numbers with units appear; the figure is a mechanism sketch, not a measurement."
 )
 
 
@@ -429,9 +423,6 @@ def build(animated: bool) -> str:
     ]
     if animated:
         defs.append(
-            f'<path id="paTrail" d="{arc_path(PA_ICR, PA_R, True, -PA_SWEEP, PA_SWEEP)}" class="mp"/>'
-        )
-        defs.append(
             f'<path id="pbTrail" d="{arc_path(PB_ICR, PB_R, True, -PB_SWEEP, 0.0)}" class="mp"/>'
         )
         for i, (lx, ly, _m, _s, _c, _d) in enumerate(PB_LABELS):
@@ -440,31 +431,31 @@ def build(animated: bool) -> str:
     defs.append("</defs>")
 
     body = (
-        text(W / 2, 48, RIBBON_1, "h", "middle")
-        + text(W / 2, 84, RIBBON_2, "lbl", "middle")
-        + panel_a(animated)
+        text(VB_CX, 46, RIBBON_1, "h", "middle")
+        + text(VB_CX, 80, RIBBON_2, "lbl", "middle")
         + panel_b(animated)
-        + strip(animated)
     )
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
-        f'viewBox="0 0 {W} {H}" role="img" aria-labelledby="pt pd">'
+        f'viewBox="{VB_X} {VB_Y} {VB_W} {VB_H}" role="img" aria-labelledby="pt pd">'
         f'<title id="pt">{TITLE}</title><desc id="pd">{DESC}</desc>'
         f"<style>{STYLE}</style>{''.join(defs)}"
-        f'<rect width="{W}" height="{H}" fill="{PAPER}"/>'
+        f'<rect x="{VB_X}" y="{VB_Y}" width="{VB_W}" height="{VB_H}" fill="{PAPER}"/>'
         f"{body}</svg>"
     )
 
 
 UNIT_RE = re.compile(r"\d\s*(mm|cm|m|deg|rad|s|Hz|m/s)\b")
 REQUIRED = (
-    "Forward motion in a turn",
     "Steady turn",
     "ICR",
-    "One line, two unknowns",
-    "gated band",
-    "opposite turn",
+    "lever arm",
 )
+
+# Single-panel crop (2026-09-22): only the steady-turn panel survives; the
+# forward-motion/yaw story now lives in make_hero_yaw.py, the readout strip is dropped.
+VB_X, VB_Y, VB_W, VB_H = PB_X - 20, 0, 730 + 40, 534 + 104 + 20
+VB_CX = VB_X + VB_W / 2
 
 
 def check(svg: str, name: str) -> list[str]:

@@ -311,6 +311,10 @@ footer {
 .hero-frontends .hero-media,
 .hero-frontends .hero-still { aspect-ratio: 1968 / 1368; }
 
+/* the lever-arm schematic is a single panel since 2026-09-22 */
+.hero-stage1 { max-width: 620px; }
+.hero-concept.hero-stage1 img { aspect-ratio: 770 / 658; }
+
 .hero-concept img {
   display: block;
   width: 100%;
