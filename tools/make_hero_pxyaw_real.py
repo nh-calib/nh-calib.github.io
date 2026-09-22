@@ -5,14 +5,15 @@ Middle : omega vs slip-corrected lateral rate.  The M3 residual
              r = sin(psi)vx + cos(psi)vy - omega*px + vc*tan(c*vc*omega)
          rearranges to  y := lateral + slip = px*omega + r, so the
          through-origin slope of the accumulating cloud IS p_x.
-Right  : the (psi, p_x) constraint space.  Perturbing the truth by
-         (dpsi, dpx) expands the residual to
-             r  ~=  omega*dpx  +  dpsi*v_jx ,   v_jx = v_cx - omega*p_y
-         so ONE curvature projects to ONE straight line of slope
-         dpx/dpsi = <omega*v_jx>/<omega^2> = 1/kappa.  The yaw lever is the
-         sensor's own longitudinal speed v_jx, not straight driving; turns of
-         different curvature -- especially of opposite sign -- make the lines
-         cross, and the crossing is what fixes (psi, px).
+Right  : sensor longitudinal speed vs lever-removed lateral speed.  The
+         same residual, solved for the sensor-frame lateral reading, is
+             vy - (omega*px - slip)/cos(psi)  =  -tan(psi) * vx ,
+         so once the omega*p_x lever-arm part is taken out, every sample of
+         every turn -- left or right -- falls on one through-origin line
+         whose slope is -tan(psi): the forward motion of the body, seen
+         through a mount rotated by psi.  The yaw lever is the longitudinal
+         speed v_x, not straight driving.  Raw lateral readings are drawn
+         faintly to show how much of them is the lever arm.
 Readout: running (psi, px) solved on the samples seen so far, vs A2D2 GT.
 """
 import json, itertools, math
@@ -23,9 +24,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-SRC = Path("/home/ailab-12/nh_calib_lidar/a2d2_s0d_dump_20260921")
-OUT = Path("/home/ailab-12/nh_calib_lidar/a2d2_s0d_frames_20260921")
-GTP = "/home/ailab-12/nh_calib_lidar/a2d2_gt.json"
+import os
+SRC = Path(os.environ.get("S0D_SRC", "/home/ailab-12/nh_calib_lidar/a2d2_s0d_dump_20260921"))
+OUT = Path(os.environ.get("S0D_OUT", "/home/ailab-12/nh_calib_lidar/a2d2_s0d_frames_20260921"))
+GTP = os.environ.get("S0D_GT", "/home/ailab-12/nh_calib_lidar/a2d2_gt.json")
+ONLY = [int(k) for k in os.environ.get("S0D_ONLY", "").split(",") if k]
 CH = "FRONT_CENTER"
 NFRAMES, FPS = 240, 30
 FG, MUT, ACC, TURN = "#10151d", "#475569", "#2563eb", "#dc2626"
@@ -95,6 +98,12 @@ assert abs(_q - px_f) < 0.02, (_q, px_f)
 print(f"self-check  psi {math.degrees(_p):.4f} vs core {psi_f:.4f} deg   "
       f"px {_q:.4f} vs core {px_f:.4f} m")
 
+# --- lever-removed lateral: vy - (omega*px - slip)/cos(psi) = -tan(psi)*vx --
+z = vy - (om * px_f - slip) / math.cos(psi_r)
+_bz = slope(vx, z)
+assert abs(-math.degrees(math.atan(_bz)) - psi_f) < 0.01, (_bz, psi_f)
+print(f"self-check  yaw slope {_bz:.5f}  ->  psi {-math.degrees(math.atan(_bz)):.4f} deg")
+
 # --- per-segment constraint lines in (psi, px) ------------------------------
 PS_HALF, PX_HALF = 1.25, 0.72                             # deg / m half-windows
 grid = np.radians(np.linspace(psi_f - PS_HALF, psi_f + PS_HALF, 41))
@@ -123,7 +132,11 @@ OUT.mkdir(parents=True, exist_ok=True)
 W = max(abs(np.degrees(om)).max(), 1.0) * 1.12
 H = max(abs(y).max(), 0.1) * 1.15
 
-for k in range(NFRAMES):
+VXM = float(vx.max()) * 1.08
+ZLO = float(min(np.percentile(vy, 0.5), z.min())) - 0.05
+ZHI = float(max(np.percentile(vy, 99.5), z.max())) + 0.05
+frames = ONLY if ONLY else range(NFRAMES)
+for k in frames:
     tc = t0 + (t1 - t0) * (k + 1) / NFRAMES
     fig, (axL, axM, axR) = plt.subplots(
         1, 3, figsize=(16.0, 7.2), dpi=120,
@@ -178,47 +191,46 @@ for k in range(NFRAMES):
                                label="converged fit")],
                loc="lower right", fontsize=9.5, framealpha=0.95)
 
-    # ---- right: the (psi, px) constraint space --------------------------
-    shown = [i for i, lm in enumerate(lmeta) if lm is not None and lm["end"] <= tc + 1e-6]
-    newest = shown[-1] if shown else None
-    for i in shown:
-        col = CCW if lmeta[i]["sign"] > 0 else CW
-        fresh = (i == newest) and (tc - lmeta[i]["end"] < 6.0)
-        axR.plot(grid_deg, lines[i], color=col, lw=2.6 if fresh else 1.5,
-                 alpha=0.95 if fresh else 0.55, zorder=4 if fresh else 3)
-    axR.plot([gt["psi_deg"]], [gt["px"]], marker="+", ms=17, mew=2.2,
-             color="#0f766e", zorder=6)
-    p_run, q_run = solve2(m)
-    if np.isfinite(p_run):
-        axR.plot([math.degrees(p_run)], [q_run], "o", ms=11, mfc="none",
-                 mec=FG, mew=2.2, zorder=7)
-    axR.set_xlim(psi_f - PS_HALF, psi_f + PS_HALF)
-    axR.set_ylim(px_f - PX_HALF, px_f + PX_HALF)
-    axR.set_xlabel("sensor yaw  $\\psi$  [deg]", fontsize=10.5)
-    axR.set_ylabel("longitudinal offset  $p_x$  [m]", fontsize=10.5)
+    # ---- right: longitudinal speed vs lever-removed lateral speed -------
+    axR.axhline(0, color="#cbd5e1", lw=0.9)
+    axR.scatter(vx[m], vy[m], s=9, c="#94a3b8", alpha=0.18, lw=0, zorder=1)
+    col = np.where(om[m] > 0, CCW, CW)
+    axR.scatter(vx[m], z[m], s=13, c=col, alpha=0.45, lw=0, zorder=2)
+    bz_run = slope(vx[m], z[m])
+    gv = np.array([0.0, VXM])
+    if np.isfinite(bz_run):
+        axR.plot(gv, bz_run * gv, color=TURN, lw=2.5, zorder=3)
+    axR.plot(gv, -math.tan(psi_r) * gv, color="#0f766e", lw=1.5, ls=(0, (6, 4)), zorder=4)
+    axR.plot(gv, -math.tan(math.radians(gt["psi_deg"])) * gv, color=FG, lw=0.9,
+             ls=(0, (1.5, 2.5)), zorder=4)
+    axR.set_xlim(0, VXM); axR.set_ylim(ZLO, ZHI)
+    axR.set_xlabel(r"sensor longitudinal speed  $\tilde v_x$  [m/s]", fontsize=10.5)
+    axR.set_ylabel(r"lever-removed lateral speed  [m/s]", fontsize=10.5)
     axR.tick_params(labelsize=9.5)
-    axR.set_title("one curvature = one line, not a point\n"
-                  "slope $=\\ v_{jx}/\\omega$ ;  curvatures must differ",
+    axR.set_title(r"at the solved $p_x$:  slope $= -\tan\psi$" "\n"
+                  r"remove $\omega p_x$: every turn falls on one line",
                   fontsize=12.5, color=FG, pad=8)
     axR.grid(alpha=0.25, lw=0.6)
-    if newest is not None and (tc - lmeta[newest]["end"] < 6.0):
-        lm = lmeta[newest]
-        axR.text(0.5, 0.955,
-                 "turn %d:  $|\\omega|$ %.1f deg/s,  $v_{jx}$ %.1f m/s,  slope %+.0f m/rad"
-                 % (shown.index(newest) + 1, lm["om"], lm["vjx"], lm["slope"]),
-                 transform=axR.transAxes, ha="center", va="top", fontsize=9.5,
-                 color=CCW if lm["sign"] > 0 else CW, zorder=8,
+    if np.isfinite(bz_run):
+        axR.text(0.03, 0.965,
+                 "slope %+.4f  ->  psi = %.3f deg" % (bz_run, -math.degrees(math.atan(bz_run))),
+                 transform=axR.transAxes, ha="left", va="top", fontsize=9.5, color=TURN,
+                 family="DejaVu Sans Mono", zorder=8,
                  bbox=dict(fc="white", ec="none", alpha=0.88, boxstyle="round,pad=0.25"))
-    axR.legend(handles=[Line2D([], [], color=CCW, lw=2.0, label="left turn  ($\\omega>0$)"),
-                        Line2D([], [], color=CW, lw=2.0, label="right turn  ($\\omega<0$)"),
-                        Line2D([], [], color=FG, marker="o", mfc="none", mew=2.0, ls="none",
-                               label="running solve"),
-                        Line2D([], [], color="#0f766e", marker="+", mew=2.0, ls="none",
-                               label="A2D2 GT")],
-               loc="lower right", fontsize=9, framealpha=0.95)
+    axR.legend(handles=[Line2D([], [], color="#94a3b8", marker="o", ls="none", ms=5, alpha=0.6,
+                               label=r"raw lateral  $\tilde v_y$"),
+                        Line2D([], [], color=CCW, marker="o", ls="none", ms=5,
+                               label="lever removed, left turn"),
+                        Line2D([], [], color=CW, marker="o", ls="none", ms=5,
+                               label="lever removed, right turn"),
+                        Line2D([], [], color=TURN, lw=2.5, label="running robust fit"),
+                        Line2D([], [], color=FG, lw=0.9, ls=(0, (1.5, 2.5)),
+                               label="A2D2 GT yaw")],
+               loc="lower left", fontsize=8.8, framealpha=0.95)
 
     # ---- readout --------------------------------------------------------
-    bs = f"{b_run:6.3f}" if np.isfinite(b_run) else "  --  "
+    p_run, q_run = solve2(m)                     # joint (psi, px) on samples so far
+    bs = f"{q_run:6.3f}" if np.isfinite(q_run) else "  --  "
     ps = f"{math.degrees(p_run):6.3f}" if np.isfinite(p_run) else "  --  "
     fig.text(0.335, 0.912,
              f"running solve   psi {ps} deg  (GT {gt['psi_deg']:.3f})\n"

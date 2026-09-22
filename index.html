@@ -198,34 +198,8 @@
           a shared modality.
         </p>
       </div>
-      <figure class="module-figure" id="fig-frontends">
-        <img src="assets/frontends_real.png"
-             alt="Two tinted columns side by side, one per drive: A2D2 on the left, RadarScenes on the right. The top row of each column holds two labelled devices in their own outlined, colour-coded cards: for A2D2, a Velodyne VLP-16 whose scan is coloured grey to green to yellow by height and carries a black arrow from the sensor showing its scan-matched linear velocity, and a one-hertz GNSS receiver shown as a scatter of fixes; for RadarScenes, a 77 gigahertz radar drawn as a grey bird’s-eye scatter with a few coloured Doppler vectors and a black arrow from the sensor showing its own estimated linear velocity, and the wheel encoders and yaw-rate gyro on the bus. Below them a single dashed card labelled ODOMETRY holds the dead-reckoned trajectory and the twist strip, and an arrow runs down into it from each of the two device cards above.">
-        <figcaption>
-          Four front ends, two drives, one interface. Each tinted column is a single drive; in its top row,
-          <b>sensor A and sensor B are two different boxes bolted to that car</b>, so each of them gets its own
-          framed, colour-coded panel: they share nothing &mdash; not a field of view, not a clock, not even the
-          physical quantity they sense. <i>A2D2 drive 20180810_150607</i>: a Velodyne VLP-16 that measures
-          range and bearing to surfaces, against a 1&#8239;Hz GNSS receiver that measures absolute position on
-          Earth. <i>RadarScenes sequence&#8239;1</i>: a 77&#8239;GHz radar that measures range, azimuth and
-          radial Doppler per return, against wheel encoders and a yaw-rate gyro on the bus. Four devices, four
-          unrelated measurements, four different algorithms &mdash; scan matching, differencing fixes, a
-          one-scan least squares, vehicle kinematics. In the radar card the black arrow from the sensor is its own
-          linear velocity as solved from that single scan (drawn at 3&times; the Doppler-arrow scale). The two arrows mark where that stops mattering: both
-          devices feed the single dashed <b>ODOMETRY</b> card below, drawn identically in both columns on
-          purpose, because whatever went in, what comes out is a planar trajectory dead-reckoned from
-          <i>(v,&#8239;&omega;)</i>. The A2D2 window is ordinary driving &mdash; 74&#8239;% of
-          it is straight, with one 87&deg; right-hand corner &mdash; and both front ends cover 139&#8239;m and
-          &minus;88&deg; of heading at <b>6.95</b> against <b>6.98&#8239;m/s</b> of path speed and a median yaw-rate
-          gap of <b>0.024&#8239;rad/s</b>; on RadarScenes the median speed gap is <b>0.078&#8239;m/s</b>. The
-          one asymmetry is real and stated: a single 2-D radar gives <i>v</i> but not <i>&omega;</i>, so
-          RadarScenes takes its yaw rate from CAN. The GNSS stream is the coarse case on purpose &mdash; the
-          bus republishes a 1&#8239;Hz fix at 6&#8239;Hz, so its per-sample speed scatters while its path still
-          lands on the LiDAR one.
-        </figcaption>
-      </figure>
-      <figure class="hero hero-real hero-frontends">
-        <video class="hero-media" autoplay muted loop playsinline preload="none"
+      <figure class="hero hero-real hero-frontends" id="fig-frontends">
+        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
                poster="assets/hero/hero_frontends_real.png"
                aria-label="The same two columns animated over the twenty second window. A2D2 LiDAR points change from grey to green to yellow with height. RadarScenes detections remain faint grey except for a sparse coloured subset carrying radial-Doppler arrows; in both the LiDAR and the radar card the sensor’s estimated linear-velocity arrow and its readout are updated every frame. Inside the ODOMETRY card of each column the trajectory trail grows and the twist cursor advances.">
           <source src="assets/hero/hero_frontends_real.webm" type="video/webm">
@@ -234,11 +208,23 @@
         <img class="hero-still" src="assets/hero/hero_frontends_real.png"
              alt="The last frame of the animation: both columns at the end of the window, with the full trail drawn inside each ODOMETRY card.">
         <figcaption>
-          The same two windows played through, 240 frames over 20&#8239;s. The raw panels step through the
-          actual data &mdash; live A2D2 scans and 270 RadarScenes radar scans, with the Doppler fit re-solved
-          on every one of them &mdash; so the counts under those panels are live, not a replay. The thing to
-          watch is the ODOMETRY card of each column: four different devices, four unrelated raw views, and the
-          same trail growing out of all of them.
+          Four front ends, two drives, one interface, played through over 20&#8239;s. Each tinted column is a
+          single drive, and in its top row <b>sensor A and sensor B are two different boxes bolted to that
+          car</b>, each in its own framed, colour-coded card: they share no field of view, no clock and not even
+          the physical quantity they sense. <i>A2D2 drive 20180810_150607</i>: a Velodyne VLP-16 measuring range
+          and bearing to surfaces (points coloured by height), against a 1&#8239;Hz GNSS receiver measuring
+          absolute position. <i>RadarScenes sequence&#8239;1</i>: a 77&#8239;GHz radar measuring range, azimuth
+          and radial Doppler per return (a sparse subset carries its Doppler arrow), against wheel encoders and a
+          yaw-rate gyro on the bus. The raw cards step through the actual data &mdash; live A2D2 scans and
+          270 RadarScenes radar scans &mdash; and in the LiDAR and radar cards the black arrow from the sensor is
+          its own linear velocity, re-solved on every scan. Both devices of a column feed the single dashed
+          <b>ODOMETRY</b> card below, drawn identically in both columns on purpose: whatever went in, what comes
+          out is a planar trajectory dead-reckoned from <i>(v,&#8239;&omega;)</i>, and the same trail grows out
+          of all four. The A2D2 window is ordinary driving &mdash; 74&#8239;% straight with one 87&deg; right-hand
+          corner &mdash; and both front ends cover 139&#8239;m and &minus;88&deg; of heading at <b>6.95</b>
+          against <b>6.98&#8239;m/s</b> of path speed, with a median yaw-rate gap of <b>0.024&#8239;rad/s</b>; on
+          RadarScenes the median speed gap is <b>0.078&#8239;m/s</b>. The one asymmetry is real and stated: a
+          single 2-D radar gives <i>v</i> but not <i>&omega;</i>, so RadarScenes takes its yaw rate from CAN.
         </figcaption>
       </figure>
       <!-- 2 ------------------------------------------------------------ -->
@@ -293,13 +279,15 @@
         <p>
           Levelling leaves a planar twist in the sensor&rsquo;s own frame, and the non-holonomic constraint reads
           the two in-plane parameters straight off it. The vehicle body has no lateral velocity, so a sensor
-          mounted a lever arm <i>p<sub>x</sub></i> ahead of the axle must read exactly
-          <i>&omega;&#8201;p<sub>x</sub></i> sideways; under straight running, where <i>&omega;</i> vanishes,
-          whatever lateral reading survives is the sensor&rsquo;s own yaw offset <i>&psi;</i>. The residual
+          mounted a lever arm <i>p<sub>x</sub></i> ahead of the axle must read <i>&omega;&#8201;p<sub>x</sub></i>
+          sideways: against the turn rate, the lateral reading has slope <i>p<sub>x</sub></i>. Take that turn part
+          out and what remains is the body&rsquo;s forward motion seen through a mount rotated by <i>&psi;</i>, so
+          against the sensor&rsquo;s longitudinal speed the lateral reading has slope &minus;tan&#8201;<i>&psi;</i>
+          &mdash; at every speed and in every turn. Both slopes come out of one residual,
           <i>r</i> = sin&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i> +
-          cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i> &minus; <i>&omega;&#8201;p<sub>x</sub></i> is
-          driven to zero over the gated segments, with a shared slip coefficient absorbing the speed-dependent
-          departure from the ideal line.
+          cos&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>y</sub></i> &minus; <i>&omega;&#8201;p<sub>x</sub></i>,
+          driven to zero jointly over the gated segments, with a shared slip coefficient absorbing the
+          speed-dependent departure from the ideal line.
         </p>
       </div>
       <figure class="hero hero-concept hero-stage1">
@@ -310,39 +298,45 @@
         </picture>
         <figcaption>Schematic, synthetic values, offsets exaggerated.</figcaption>
       </figure>
+      <figure class="hero hero-concept hero-stage1-yaw">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" srcset="assets/hero/hero_yaw_static.svg">
+          <img src="assets/hero/hero_yaw.svg"
+               alt="Two panels. Left, a car seen from above with a sensor mounted rotated by the yaw angle psi. The body velocity points along the car heading and stretches as the speed changes; the sensor resolves it on its own rotated axes into a longitudinal and a lateral component, and in each turn a blue lateral part, turn rate times lever arm, appears and is removed. Right, the sensor's own frame: each sample drops a hollow raw dot, scattered by the turn part, and a filled dot once that part is removed; the filled dots of all speeds and all turns fall on one line through the origin whose angle to the longitudinal axis is psi, so its slope is minus tan psi.">
+        </picture>
+        <figcaption>
+          Why the slope is the yaw. Schematic, synthetic values, <i>&psi;</i> exaggerated. Speed only stretches
+          the arrow; its direction in the sensor frame is fixed by the mount, so the lever on yaw is forward
+          speed, not straight driving &mdash; a sample at zero forward speed sits on the origin and says nothing
+          about <i>&psi;</i>.
+        </figcaption>
+      </figure>
       <p class="stage-bridge">
-        The same module on the real drive &mdash; the cloud is what it actually consumed, the moving line is the
-        same robust fit, and the right panel shows each turn projecting into the
-        (<i>&psi;</i>,&#8202;<i>p<sub>x</sub></i>) parameter space as the pair is solved:
+        The same module on the real drive &mdash; the middle panel is the turn-rate slope (<i>p<sub>x</sub></i>),
+        the right panel the longitudinal-speed slope (<i>&psi;</i>), both growing as the drive is replayed:
       </p>
       <figure class="hero hero-real hero-stage1-real">
         <video class="hero-media" autoplay muted loop playsinline preload="metadata"
                poster="assets/hero/hero_pxyaw_real.png"
-               aria-label="Three panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Middle, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres. Right, the yaw-versus-lever-arm parameter space: each completed turn drops one straight constraint line, blue for left turns and red for right turns, and the running two-parameter solve walks into the knot where the lines of opposite curvature cross.">
+               aria-label="Three panels replayed over one A2D2 drive. Left, the CAN-integrated ego path fills in with its gated turn segments picked out in red. Middle, every accepted sample is plotted as sensor yaw rate against slip-corrected lateral rate; the cloud grows and a robust through-origin fit settles on a slope of 1.668 metres against a ground truth of 1.711 metres. Right, the same samples plotted as sensor longitudinal speed against lateral speed with the turn part removed: faint grey raw readings scatter with the turn, while the corrected points of left and right turns collapse onto one line through the origin whose slope settles on minus 0.0215, a yaw of 1.230 degrees against a ground truth of 1.225.">
           <source src="assets/hero/hero_pxyaw_real.webm" type="video/webm">
           <source src="assets/hero/hero_pxyaw_real.mp4" type="video/mp4">
         </video>
         <img class="hero-still" src="assets/hero/hero_pxyaw_real.png"
-             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, a fitted lever arm of 1.668 metres against a ground truth of 1.711 metres, and eleven constraint lines crossing in the yaw-lever-arm plane.">
+             alt="The completed A2D2 FRONT_CENTER run: eleven gated turns on the ego path, 697 accepted samples, a turn-rate slope of 1.668 metres against a ground truth of 1.711 metres, and a longitudinal-speed slope of minus 0.0215, a yaw of 1.230 degrees against 1.225.">
         <figcaption>
-          A2D2 <b>FRONT_CENTER</b> alone &mdash; no second sensor enters this figure. Rearranged, the residual
-          gives <i>&#7805;</i><sub>lat</sub> + <i>v<sub>c</sub></i>&#8201;tan(<i>c&#8201;v<sub>c</sub>&omega;</i>) =
-          <i>p<sub>x</sub>&#8201;&omega;</i>, so the through-origin slope <em>is</em> the lever arm:
-          1.668&#8239;m over 697 gated samples from 11 turns against a ground truth of 1.711&#8239;m, with
-          <i>&psi;</i> = 1.230&deg; against 1.225&deg;. The shaded band is the
-          |<i>&omega;</i>|&#8239;&ge;&#8239;5&#8239;deg/s gate.
-          <br>
-          The right panel is why a single turn is not enough. Perturbing the solution by
-          (<i>&delta;&psi;</i>, <i>&delta;p<sub>x</sub></i>) expands the residual to
-          <i>&omega;&#8201;&delta;p<sub>x</sub></i> + <i>&delta;&psi;&#8201;v<sub>jx</sub></i>, so the lever on yaw
-          is the sensor's own <em>longitudinal</em> speed
-          <i>v<sub>jx</sub></i> = <i>v<sub>cx</sub></i> &minus; <i>&omega;&#8201;p<sub>y</sub></i> &mdash; not
-          driving straight. One curvature therefore projects to one straight line of slope
-          <i>v<sub>jx</sub></i>/<i>&omega;</i>, never to a point: measured slopes run
-          &minus;17.8 to &minus;29.7&#8239;m/rad for the 8 right turns and +13.9 to +34.7&#8239;m/rad for the
-          3 left turns, and their 48 pairwise crossings have a median of
-          (1.233&deg;, 1.682&#8239;m) against the solved (1.230&deg;, 1.668&#8239;m). Opposite turn direction is
-          the strongest lever here; with one curvature only, <i>&psi;</i> and <i>p<sub>x</sub></i> stay on a line.
+          A2D2 <b>FRONT_CENTER</b> alone &mdash; no second sensor enters this figure. The residual solved for the
+          lateral reading gives two straight lines. Against the turn rate (middle),
+          <i>&#7805;</i><sub>lat</sub> + <i>v<sub>c</sub></i>&#8201;tan(<i>c&#8201;v<sub>c</sub>&omega;</i>) =
+          <i>p<sub>x</sub>&#8201;&omega;</i>: 1.668&#8239;m over 697 gated samples from 11 turns against a ground
+          truth of 1.711&#8239;m; the shaded band is the |<i>&omega;</i>|&#8239;&ge;&#8239;5&#8239;deg/s gate.
+          Against the longitudinal speed (right), <i>&#7805;<sub>y</sub></i> &minus;
+          (<i>&omega;&#8201;p<sub>x</sub></i> &minus; slip)/cos&#8201;<i>&psi;</i> =
+          &minus;tan&#8201;<i>&psi;</i>&#8201;<i>&#7805;<sub>x</sub></i>: the raw lateral readings (grey) scatter by
+          several tenths of a metre per second with the turn, and once the turn part is removed the left and right turns
+          fall on one line of slope &minus;0.0215, i.e. <i>&psi;</i> = 1.230&deg; against 1.225&deg;. The two
+          lines are not solved one after the other: the readout is the joint robust solve, and each panel is drawn
+          at the other parameter&rsquo;s converged value.
         </figcaption>
       </figure>
 
