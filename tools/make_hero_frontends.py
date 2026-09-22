@@ -26,14 +26,18 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.lines import Line2D
-from matplotlib.patches import FancyBboxPatch
+from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Rectangle
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "experiments" / "frontends" / "data" / "frontends_material_v2.npz"
 OUTDIR = ROOT / "project_page" / "assets"
 
 FG, MUT, GRID = "#10151d", "#475569", "#dde3ea"
-C_LIDAR, C_GNSS = "#2563eb", "#0891b2"
+# One colour per physical device, not per trace.  LiDAR/GNSS were both blue-cyan
+# in the first cut, which read as "one stream drawn twice" instead of "two
+# different boxes bolted to the same car"; blue vs magenta is separable in
+# greyscale and for the common colour-vision deficiencies.
+C_LIDAR, C_GNSS = "#1d4ed8", "#be185d"
 C_RADAR, C_CAN = "#dc2626", "#0f766e"
 C_YAW = "#7c3aed"
 BADGE_PAPER, BADGE_SAME = "#1d4ed8", "#0f766e"
@@ -46,10 +50,10 @@ DOPPLER_NORM = Normalize(vmin=-8.0, vmax=8.0)
 BANDS = {
     "a2d2": dict(accent="#3730a3", tint="#f4f6ff",
                  title="A2D2  ·  drive 20180810_150607",
-                 sub="front ends:  LiDAR (KISS-ICP, FRONT_CENTER)   +   GNSS fixes (vehicle bus)"),
+                 sub="two independent devices  ·  nothing shared: no field of view, no clock, no measured quantity"),
     "rs": dict(accent="#9a3412", tint="#fff9f4",
                title="RadarScenes  ·  sequence 1",
-               sub="front ends:  2-D radar Doppler (sensor 1)   +   CAN odometry (vehicle bus)"),
+               sub="two independent devices  ·  nothing shared: no field of view, no clock, no measured quantity"),
 }
 
 plt.rcParams.update({
@@ -169,18 +173,71 @@ def radar_doppler_bev(ax, az, vr, rng, n_highlight=14):
     return pick
 
 
-def head(ax, text, sub, color, badge=None):
+#: vertical offsets of the four header rows, in figure fraction above the axes
+ROW_TITLE, ROW_DEVICE, ROW_MEASURES, ROW_SUB = 0.049, 0.033, 0.019, 0.005
+
+
+def head(ax, text, sub, color, badge=None, device=None, measures=None):
+    """Panel header.
+
+    Raw-sensor panels pass `device` and `measures` so the reader is told which
+    physical box this is and what quantity it actually senses; the shared
+    trajectory / twist panels pass neither and keep the top two rows only, so
+    every header in a band starts on the same baseline.
+    """
     fig = ax.figure
     bb = ax.get_position()
-    fig.text(bb.x0, bb.y1 + 0.021, text, ha="left", va="bottom",
+    x = bb.x0 + (0.0115 if device else 0.0)
+    if device:                                   # device colour bar, band-style
+        fig.add_artist(Rectangle(
+            (bb.x0, bb.y1 + ROW_TITLE - 0.0035), 0.0045, 0.0185,
+            transform=fig.transFigure, facecolor=color, edgecolor="none",
+            zorder=6))
+    fig.text(x, bb.y1 + ROW_TITLE, text, ha="left", va="bottom",
              fontsize=9.8, fontweight="bold", color=color)
-    fig.text(bb.x0, bb.y1 + 0.006, sub, ha="left", va="bottom",
-             fontsize=7.5, color=MUT)
+    fig.text(x, bb.y1 + (ROW_DEVICE if device else ROW_DEVICE),
+             device if device else sub, ha="left", va="bottom",
+             fontsize=7.3 if device else 7.5, color=FG if device else MUT)
+    if measures:
+        fig.text(x, bb.y1 + ROW_MEASURES, measures, ha="left", va="bottom",
+                 fontsize=6.7, color=MUT, style="italic")
+    if device:
+        fig.text(x, bb.y1 + ROW_SUB, sub, ha="left", va="bottom",
+                 fontsize=7.0, color=MUT)
     if badge:
         label, bc = badge
-        fig.text(bb.x1, bb.y1 + 0.023, label, ha="right", va="bottom", fontsize=6.9,
-                 color="white", fontweight="bold",
+        fig.text(bb.x1, bb.y1 + ROW_TITLE + 0.001, label,
+                 ha="right", va="bottom",
+                 fontsize=6.9, color="white", fontweight="bold",
                  bbox=dict(boxstyle="round,pad=0.30", fc=bc, ec="none"))
+
+
+def split_and_merge(fig, a0, a1, a2, accent):
+    """Draw the band's grammar between the panels.
+
+    Between the two raw panels: a dashed rule, because those two columns are
+    unrelated hardware — different quantity, different rate, different clock.
+    Between the second raw panel and the trajectory: an arrow, because that is
+    where the two of them stop being different.
+    """
+    p0, p1, p2 = a0.get_position(), a1.get_position(), a2.get_position()
+    yc = 0.5 * (p0.y0 + p0.y1)
+    xs = p0.x1 + 0.0075
+    fig.add_artist(Line2D([xs, xs], [p0.y0 - 0.006, p0.y1 + 0.012],
+                          transform=fig.transFigure, color="#aab3c0",
+                          lw=0.9, ls=(0, (3, 3)), zorder=4))
+    fig.text(xs, yc, "different device\ndifferent quantity", rotation=90,
+             ha="center", va="center", fontsize=6.4, color="#7c8796",
+             linespacing=1.5, zorder=5,
+             bbox=dict(boxstyle="round,pad=0.30", fc="white", ec="none", alpha=0.97))
+
+    xm = p1.x1 + 0.019
+    fig.add_artist(FancyArrowPatch(
+        (xm - 0.0080, yc), (xm + 0.0080, yc), transform=fig.transFigure,
+        arrowstyle="-|>", mutation_scale=15, lw=2.1, color=accent, zorder=5))
+    # no caption on the arrow: the gap between a twin-axis panel and the next
+    # y-axis label is barely wider than the arrow itself, and the band strapline
+    # plus the trajectory panel title already say it.
 
 
 def band_box(fig, axes, cfg):
@@ -189,7 +246,7 @@ def band_box(fig, axes, cfg):
     x1 = max(a.get_position().x1 for a in axes)
     y0 = min(a.get_position().y0 for a in axes)
     y1 = max(a.get_position().y1 for a in axes)
-    px, pyt, pyb = 0.017, 0.088, 0.058
+    px, pyt, pyb = 0.017, 0.112, 0.055
     box = FancyBboxPatch((x0 - px, y0 - pyb), (x1 - x0) + 2 * px, (y1 - y0) + pyt + pyb,
                          boxstyle="round,pad=0.004,rounding_size=0.012",
                          transform=fig.transFigure, facecolor=cfg["tint"],
@@ -235,12 +292,12 @@ def main():
     ax_g, ay_g = integrate(gt, gv, np.zeros_like(gv), gwz)
     bx_r, by_r = integrate(rt, rvy, rvx, rwz)
     bx_c, by_c = integrate(ct, cvx, np.zeros_like(cvx), cwz)
-    rotA = principal_angle(np.r_[ax_l, ax_g], np.r_[ay_l, ay_g])
-    rotB = principal_angle(np.r_[bx_r, bx_c], np.r_[by_r, by_c])
-    ax_l, ay_l = rot(ax_l, ay_l, rotA)
-    ax_g, ay_g = rot(ax_g, ay_g, rotA)
-    bx_r, by_r = rot(bx_r, by_r, rotB)
-    bx_c, by_c = rot(bx_c, by_c, rotB)
+    # 2026-09-22: no display rotation.  The path is drawn in the vehicle frame at
+    # the first sample of the window (+x = heading at t=0, +y = left), the same
+    # convention as the raw-sensor panels, so a turn seen in the point cloud and
+    # the bend in this panel refer to one frame.  The earlier principal_angle()
+    # rotation filled the panel better but left the two panels in unrelated
+    # frames, which made the trajectory unreadable against the cloud.
 
     res = {
         "a2d2_v_mismatch": mismatch(gt, gv, lt, lspd),
@@ -262,9 +319,9 @@ def main():
                                          ct, cvx)),
     }
 
-    fig = plt.figure(figsize=(16.2, 9.3), dpi=135)
-    outer = fig.add_gridspec(2, 1, hspace=0.70, left=0.052, right=0.980,
-                             top=0.800, bottom=0.078)
+    fig = plt.figure(figsize=(16.2, 9.9), dpi=135)
+    outer = fig.add_gridspec(2, 1, hspace=0.80, left=0.052, right=0.980,
+                             top=0.812, bottom=0.070)
     WR = [1.02, 1.02, 0.92, 1.36]
 
     def make_band(row):
@@ -280,12 +337,12 @@ def main():
     A0, A1, A2, AS0, AS1 = make_band(0)
     B0, B1, B2, BS0, BS1 = make_band(1)
 
-    fig.text(0.052, 0.968, "One interface, four front ends",
+    fig.text(0.052, 0.972, "One interface, four front ends",
              fontsize=17.5, fontweight="bold", ha="left", va="center", color=FG)
-    fig.text(0.052, 0.930,
-             "Each tinted box is one drive.  Inside a box: what the sensor natively measures (left two), "
-             "the trajectory that follows from its twist (third), and the twist itself (right) — the only "
-             "thing the calibrator reads.",
+    fig.text(0.052, 0.938,
+             "Each tinted box is one drive; the two left panels of a box are two different devices on that "
+             "car.  Badge “paper” marks the front end used in the paper’s experiments, “demo” the second "
+             "device shown to make the interface point.",
              fontsize=9.3, ha="left", va="center", color=MUT)
 
     # ============================================================== band A: A2D2
@@ -305,8 +362,10 @@ def main():
     A0.set_xlabel("x [m]  (sensor frame)", fontsize=7.8)
     A0.set_ylabel("y [m]", fontsize=7.8)
     tidy(A0, grid=False)
-    head(A0, "LiDAR point cloud", "one scan, %d points, forward wedge" % len(pts),
-         C_LIDAR, ("paper front end", BADGE_PAPER))
+    head(A0, "SENSOR A  ·  LiDAR", "shown: one scan, %s points" % format(len(pts), ",d").replace(",", " "),
+         C_LIDAR, ("paper", BADGE_PAPER),
+         device="Velodyne VLP-16, FRONT_CENTER view  ·  ≈ 30 Hz",
+         measures="range + bearing to surfaces  →  scan matching")
 
     A1.plot(gfx, gfy, "-", color=C_GNSS, lw=0.9, alpha=0.45, zorder=2)
     A1.scatter(gfx, gfy, s=17, facecolor="white", edgecolor=C_GNSS, linewidths=1.0, zorder=3)
@@ -314,15 +373,22 @@ def main():
     A1.set_xlabel("east [m]  (local tangent plane)", fontsize=7.8)
     A1.set_ylabel("north [m]", fontsize=7.8)
     tidy(A1)
-    head(A1, "GNSS fixes",
-         "%d distinct fixes at %.1f Hz, no attitude"
+    head(A1, "SENSOR B  ·  GNSS",
+         "shown: %d fixes at %.1f Hz, no attitude"
          % (meta["a2d2_gnss_n"], meta["a2d2_gnss_rate_hz"]),
-         C_GNSS, ("same interface", BADGE_SAME))
+         C_GNSS, ("demo", BADGE_SAME),
+         device="vehicle-bus GNSS, position only  ·  1 Hz fix",
+         measures="absolute position on Earth  →  differencing fixes")
 
     trail(A2, ax_l, ay_l, C_LIDAR, lw=2.4)
     trail(A2, ax_g, ay_g, C_GNSS, lw=1.7)
+    ks = int(np.argmin(np.abs(lt - float(meta["a2d2_scan_rel_t"]))))
+    A2.plot([ax_l[ks]], [ay_l[ks]], marker="*", ms=11, color="#f59e0b",
+            mec="white", mew=0.8, zorder=6, linestyle="none")
+    A2.annotate("scan shown here", (ax_l[ks], ay_l[ks]), textcoords="offset points",
+                xytext=(6, -16), fontsize=6.8, color="#b45309")
     A2.set_aspect("equal", adjustable="datalim")
-    A2.set_xlabel("x [m]", fontsize=7.8)
+    A2.set_xlabel("x [m]  (vehicle frame at t=0)", fontsize=7.8)
     A2.set_ylabel("y [m]", fontsize=7.8)
     tidy(A2)
     A2.legend(handles=[Line2D([], [], color=C_LIDAR, lw=2.4, label="from LiDAR twist"),
@@ -373,10 +439,13 @@ def main():
             color=FG, linespacing=1.45, zorder=6,
             bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=C_RADAR,
                       lw=0.8, alpha=0.94))
-    head(B0, "Radar BEV",
-         "one BEV scan, %d returns; %d highlighted vectors"
+    head(B0, "SENSOR A  ·  radar",
+         "shown: one scan, %d returns  ·  %d vectors"
          % (meta["rs_scan_n"], len(picked)),
-         C_RADAR, ("paper front end", BADGE_PAPER))
+         C_RADAR, ("paper", BADGE_PAPER),
+         device="77 GHz series radar, sensor 1  ·  %.1f scans/s"
+                % (meta["rs_usable_scans"] / meta["window_s"]),
+         measures="range, azimuth, radial Doppler  →  one-scan least squares")
 
     zm = (ct >= 6.0) & (ct <= 8.0)
     B1.step(ct[zm], cvx[zm] * 3.6, where="post", color=C_CAN, lw=1.5)
@@ -385,18 +454,24 @@ def main():
     B1.tick_params(axis="y", colors=C_CAN)
     B1b = B1.twinx()
     B1b.step(ct[zm], np.degrees(cwz[zm]), where="post", color=C_YAW, lw=1.3, ls=(0, (4, 2)))
-    B1b.set_ylabel("yaw rate [deg/s]", fontsize=7.8, color=C_YAW)
+    B1b.set_ylabel("")
+    B1b.text(1.0, 1.012, "yaw rate [deg/s]", transform=B1b.transAxes,
+             ha="right", va="bottom", fontsize=7.4, color=C_YAW)
     B1b.tick_params(axis="y", colors=C_YAW, labelsize=7.6, length=2.6)
     B1b.spines["top"].set_visible(False)
     B1.set_xlabel("time in window [s]", fontsize=7.8)
     tidy(B1)
-    head(B1, "CAN bus frames", "2 s zoom of the %d messages in the window" % len(ct),
-         C_CAN, ("same interface", BADGE_SAME))
+    head(B1, "SENSOR B  ·  CAN bus",
+         "shown: 2 s zoom of %d messages" % len(ct),
+         C_CAN, ("demo", BADGE_SAME),
+         device="wheel encoders + yaw-rate gyro  ·  %.0f Hz"
+                % (len(ct) / meta["window_s"]),
+         measures="wheel rotation + yaw rate  →  vehicle kinematics")
 
     trail(B2, bx_r, by_r, C_RADAR, lw=2.4)
     trail(B2, bx_c, by_c, C_CAN, lw=1.7)
     B2.set_aspect("equal", adjustable="datalim")
-    B2.set_xlabel("x [m]", fontsize=7.8)
+    B2.set_xlabel("x [m]  (vehicle frame at t=0)", fontsize=7.8)
     B2.set_ylabel("y [m]", fontsize=7.8)
     tidy(B2)
     B2.legend(handles=[Line2D([], [], color=C_RADAR, lw=2.4, label="from radar twist"),
@@ -427,6 +502,8 @@ def main():
     fig.canvas.draw()
     band_box(fig, [A0, A1, A2, AS0, AS1], BANDS["a2d2"])
     band_box(fig, [B0, B1, B2, BS0, BS1], BANDS["rs"])
+    split_and_merge(fig, A0, A1, A2, BANDS["a2d2"]["accent"])
+    split_and_merge(fig, B0, B1, B2, BANDS["rs"]["accent"])
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
     png = OUTDIR / "frontends_real.png"

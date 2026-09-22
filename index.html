@@ -200,17 +200,22 @@
       </div>
       <figure class="module-figure" id="fig-frontends">
         <img src="assets/frontends_real.png"
-             alt="Two tinted boxes, one per drive. The upper A2D2 box shows a forward LiDAR scan coloured grey to green to yellow by height, GNSS fixes, dead-reckoned trajectories and twist. The lower RadarScenes box shows all radar detections as faint grey BEV points, selected coloured points with radial-Doppler vectors, CAN signals, trajectories and the same twist interface.">
+             alt="Two tinted boxes, one per drive. Each box holds two labelled devices: in the A2D2 box, sensor A is a Velodyne VLP-16 whose scan is coloured grey to green to yellow by height, sensor B a one-hertz GNSS receiver shown as a scatter of fixes; in the RadarScenes box, sensor A is a 77 gigahertz radar drawn as a grey bird’s-eye scatter with a few coloured Doppler vectors, sensor B the wheel encoders and yaw-rate gyro on the bus. A dashed rule separates the two devices in each box and an arrow leads from them into a shared trajectory panel and twist strip.">
         <figcaption>
-          Four front ends, two drives, one interface. Each tinted box is a single drive, so nothing has to be
-          matched across the divider. <i>A2D2 drive 20180810_150607</i>: KISS-ICP on FRONT_CENTER against the
-          bus GNSS fixes. <i>RadarScenes sequence&#8239;1</i>: Doppler ego-velocity from a single 2-D radar
-          against the vehicle bus. The two left panels of a box are what that sensor natively measures &mdash;
-          a height-coloured point cloud, a scatter of fixes, a radar BEV with selected Doppler vectors, and two bus scalars. The third panel is
-          drawn identically in both boxes on purpose: whatever went in, what comes out is a planar trajectory
-          dead-reckoned from <i>(v,&#8239;&omega;)</i>. On A2D2 the two front ends cover 175&#8239;m and
-          354&deg; of heading at <b>8.75</b> against <b>8.82&#8239;m/s</b> of path speed and a median yaw-rate
-          gap of <b>0.015&#8239;rad/s</b>; on RadarScenes the median speed gap is <b>0.078&#8239;m/s</b>. The
+          Four front ends, two drives, one interface. Each tinted box is a single drive; inside it,
+          <b>sensor A and sensor B are two different boxes bolted to that car</b>, and the dashed rule between
+          them is there because they share nothing &mdash; not a field of view, not a clock, not even the
+          physical quantity they sense. <i>A2D2 drive 20180810_150607</i>: a Velodyne VLP-16 that measures
+          range and bearing to surfaces, against a 1&#8239;Hz GNSS receiver that measures absolute position on
+          Earth. <i>RadarScenes sequence&#8239;1</i>: a 77&#8239;GHz radar that measures range, azimuth and
+          radial Doppler per return, against wheel encoders and a yaw-rate gyro on the bus. Four devices, four
+          unrelated measurements, four different algorithms &mdash; scan matching, differencing fixes, a
+          one-scan least squares, vehicle kinematics. The arrow marks where that stops mattering: the third
+          panel is drawn identically in both boxes on purpose, because whatever went in, what comes out is a
+          planar trajectory dead-reckoned from <i>(v,&#8239;&omega;)</i>. The A2D2 window is ordinary driving &mdash; 74&#8239;% of
+          it is straight, with one 87&deg; right-hand corner &mdash; and both front ends cover 139&#8239;m and
+          &minus;88&deg; of heading at <b>6.95</b> against <b>6.98&#8239;m/s</b> of path speed and a median yaw-rate
+          gap of <b>0.024&#8239;rad/s</b>; on RadarScenes the median speed gap is <b>0.078&#8239;m/s</b>. The
           one asymmetry is real and stated: a single 2-D radar gives <i>v</i> but not <i>&omega;</i>, so
           RadarScenes takes its yaw rate from CAN. The GNSS stream is the coarse case on purpose &mdash; the
           bus republishes a 1&#8239;Hz fix at 6&#8239;Hz, so its per-sample speed scatters while its path still
@@ -230,30 +235,10 @@
           The same two windows played through, 240 frames over 20&#8239;s. The raw panels step through the
           actual data &mdash; live A2D2 scans and 270 RadarScenes radar scans, with the Doppler fit re-solved
           on every one of them &mdash; so the counts under those panels are live, not a replay. The thing to
-          watch is the third panel of each box: four different sensors, four unrelated raw views, and the same
-          trail growing out of all of them.
+          watch is the third panel of each box: four different devices, four unrelated raw views, and the
+          same trail growing out of all of them.
         </figcaption>
       </figure>
-      <figure class="hero hero-real hero-stage-ego">
-        <video class="hero-media" autoplay muted loop playsinline preload="metadata"
-               poster="assets/hero/hero_egomotion_real.png"
-               aria-label="Two panels over ten seconds of an A2D2 drive. Left, one raw LiDAR scan per video frame in the sensor's own frame, bird's-eye and coloured by height, with the road corridor streaming past and swinging sideways through a right turn. Right, the ego path integrated from that same sensor's twist, growing one sample per frame with a heading arrow, running straight and then bending ninety degrees; beside it the forward speed and yaw rate that the rest of the estimator consumes.">
-          <source src="assets/hero/hero_egomotion_real.webm" type="video/webm">
-          <source src="assets/hero/hero_egomotion_real.mp4" type="video/mp4">
-        </video>
-        <img class="hero-still" src="assets/hero/hero_egomotion_real.png"
-             alt="The completed ten-second window: the last raw scan in the sensor frame, the 59.5 metre path it produced with an 89.5 degree right turn, and the speed and yaw-rate traces.">
-        <figcaption>
-          A2D2 drive 20180810&#8239;150607, LiDAR <b>FRONT_CENTER</b>, 10&#8239;s taken from the middle of the
-          drive. <i>Left</i>: one cached scan per video frame in the raw sensor frame, about 20,000 points,
-          nothing transformed. <i>Right</i>: the twist the front end produced from that same stream, integrated
-          on its own clock &mdash; 59.5&#8239;m and one 89.5&deg; right turn, with the forward speed running
-          4.7&ndash;7.1&#8239;m/s. No ground truth and no second sensor enters this figure. Everything after this
-          module sees only the two numbers on the right, <i>v</i> and <i>&omega;</i> &mdash; which is what lets a
-          2-D radar or a wheel-speed channel take the same place.
-        </figcaption>
-      </figure>
-
       <!-- 2 ------------------------------------------------------------ -->
       <div class="module" id="m-segments">
         <h3><span class="module-n">2</span> Turn segment extraction</h3>

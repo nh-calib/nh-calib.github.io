@@ -107,9 +107,9 @@ def _grown(ax, t, v, T, color, lw, ls="-", marker=None):
 
 def render(i):
     T = float(FT[i])
-    fig = plt.figure(figsize=(16.2, 9.3), dpi=120)
-    outer = fig.add_gridspec(2, 1, hspace=0.70, left=0.052, right=0.980,
-                             top=0.800, bottom=0.078)
+    fig = plt.figure(figsize=(16.2, 9.9), dpi=120)
+    outer = fig.add_gridspec(2, 1, hspace=0.80, left=0.052, right=0.980,
+                             top=0.812, bottom=0.070)
     WR = [1.02, 1.02, 0.92, 1.36]
 
     def band(row):
@@ -123,14 +123,14 @@ def render(i):
     A0, A1, A2, AS0, AS1 = band(0)
     B0, B1, B2, BS0, BS1 = band(1)
 
-    fig.text(0.052, 0.968, "One interface, four front ends",
+    fig.text(0.052, 0.972, "One interface, four front ends",
              fontsize=17.5, fontweight="bold", ha="left", va="center", color=S.FG)
-    fig.text(0.052, 0.930,
-             "Each tinted box is one drive.  Inside a box: what the sensor natively measures "
-             "(left two), the trajectory that follows from its twist (third), and the twist "
-             "itself (right) — the only thing the calibrator reads.",
+    fig.text(0.052, 0.938,
+             "Each tinted box is one drive; the two left panels of a box are two different devices "
+             "on that car.  Badge “paper” marks the front end used in the paper’s "
+             "experiments, “demo” the second device shown to make the interface point.",
              fontsize=9.3, ha="left", va="center", color=S.MUT)
-    fig.text(0.980, 0.968, "t = %5.2f s" % T, fontsize=12.0, ha="right", va="center",
+    fig.text(0.980, 0.972, "t = %5.2f s" % T, fontsize=12.0, ha="right", va="center",
              color=S.MUT, family="DejaVu Sans Mono")
 
     # ------------------------------------------------------------- band A
@@ -150,8 +150,10 @@ def render(i):
     A0.set_xlabel("x [m]  (sensor frame)", fontsize=7.8)
     A0.set_ylabel("y [m]", fontsize=7.8)
     S.tidy(A0, grid=False)
-    S.head(A0, "LiDAR point cloud", "live scan, FRONT_CENTER", S.C_LIDAR,
-           ("paper front end", S.BADGE_PAPER))
+    S.head(A0, "SENSOR A  ·  LiDAR", "shown: live scan, FRONT_CENTER", S.C_LIDAR,
+           device="Velodyne VLP-16, FRONT_CENTER view  ·  ≈ 30 Hz",
+           measures="range + bearing to surfaces  →  scan matching",
+           badge=("paper", S.BADGE_PAPER))
 
     shown = D["gft"] <= T
     A1.plot(D["gfx"], D["gfy"], "-", color=S.C_GNSS, lw=0.9, alpha=0.16, zorder=2)
@@ -167,9 +169,11 @@ def render(i):
     A1.set_xlabel("east [m]  (local tangent plane)", fontsize=7.8)
     A1.set_ylabel("north [m]", fontsize=7.8)
     S.tidy(A1)
-    S.head(A1, "GNSS fixes", "%d of %d distinct fixes at %.1f Hz"
+    S.head(A1, "SENSOR B  ·  GNSS", "shown: %d of %d fixes at %.1f Hz"
            % (int(shown.sum()), META["a2d2_gnss_n"], META["a2d2_gnss_rate_hz"]),
-           S.C_GNSS, ("same interface", S.BADGE_SAME))
+           S.C_GNSS, ("demo", S.BADGE_SAME),
+           device="vehicle-bus GNSS, position only  ·  1 Hz fix",
+           measures="absolute position on Earth  →  differencing fixes")
 
     _trail_to(A2, D["axl"], D["ayl"], D["lt"], T, S.C_LIDAR, 2.4)
     _trail_to(A2, D["axg"], D["ayg"], D["gt"], T, S.C_GNSS, 1.7)
@@ -232,8 +236,11 @@ def render(i):
             color=S.FG, linespacing=1.45, zorder=6,
             bbox=dict(boxstyle="round,pad=0.38", fc="white", ec=S.C_RADAR,
                       lw=0.8, alpha=0.94))
-    S.head(B0, "Radar BEV", "live BEV, %d returns; %d Doppler vectors"
-           % (len(az), len(picked)), S.C_RADAR, ("paper front end", S.BADGE_PAPER))
+    S.head(B0, "SENSOR A  ·  radar", "shown: live BEV, %d returns  ·  %d vectors"
+           % (len(az), len(picked)), S.C_RADAR, ("paper", S.BADGE_PAPER),
+           device="77 GHz series radar, sensor 1  ·  %.1f scans/s"
+                  % (META["rs_usable_scans"] / WIN),
+           measures="range, azimuth, radial Doppler  →  one-scan least squares")
 
     lo = min(max(T - 1.0, 0.0), WIN - 2.0)
     zm = (D["ct"] >= lo) & (D["ct"] <= lo + 2.0)
@@ -247,13 +254,17 @@ def render(i):
     B1b.step(D["ct"][zm], np.degrees(D["cwz"][zm]), where="post", color=S.C_YAW,
              lw=1.3, ls=(0, (4, 2)))
     B1b.set_ylim(*D["ylim_can_w"])
-    B1b.set_ylabel("yaw rate [deg/s]", fontsize=7.8, color=S.C_YAW)
+    B1b.set_ylabel("")
+    B1b.text(1.0, 1.012, "yaw rate [deg/s]", transform=B1b.transAxes,
+             ha="right", va="bottom", fontsize=7.4, color=S.C_YAW)
     B1b.tick_params(axis="y", colors=S.C_YAW, labelsize=7.6, length=2.6)
     B1b.spines["top"].set_visible(False)
     B1.set_xlabel("time in window [s]", fontsize=7.8)
     S.tidy(B1)
-    S.head(B1, "CAN bus frames", "2 s sliding window over the message stream",
-           S.C_CAN, ("same interface", S.BADGE_SAME))
+    S.head(B1, "SENSOR B  ·  CAN bus", "shown: 2 s sliding window",
+           S.C_CAN, ("demo", S.BADGE_SAME),
+           device="wheel encoders + yaw-rate gyro  ·  %.0f Hz" % (len(D["ct"]) / WIN),
+           measures="wheel rotation + yaw rate  →  vehicle kinematics")
 
     _trail_to(B2, D["bxr"], D["byr"], D["rt"], T, S.C_RADAR, 2.4)
     _trail_to(B2, D["bxc"], D["byc"], D["ct"], T, S.C_CAN, 1.7)
@@ -292,6 +303,8 @@ def render(i):
     fig.canvas.draw()
     S.band_box(fig, [A0, A1, A2, AS0, AS1], S.BANDS["a2d2"])
     S.band_box(fig, [B0, B1, B2, BS0, BS1], S.BANDS["rs"])
+    S.split_and_merge(fig, A0, A1, A2, S.BANDS["a2d2"]["accent"])
+    S.split_and_merge(fig, B0, B1, B2, S.BANDS["rs"]["accent"])
 
     out = OUTDIR / ("%05d.png" % i)
     fig.savefig(out, dpi=120, facecolor="white")
